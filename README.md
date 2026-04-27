@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Storefront (multi-tenant)
 
-## Getting Started
+A single Next.js 15 deployment that serves multiple customer stores. Each store
+gets its own hostname (`acme.shop.hq.team` or `shop.acme.com`) pointing to the
+same deployment. At request time, middleware reads the `Host` header, resolves
+which store this request belongs to, and scopes everything downstream to that
+store.
 
-First, run the development server:
+The WMS is the source of truth — this app is a thin UI over the `/storefront/*`
+API.
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# 1. Scaffold the Next.js app
+pnpm create next-app@latest storefront --typescript --tailwind --eslint --app --no-src-dir --import-alias "@/*"
+cd storefront
+
+# 2. Init shadcn
+pnpm dlx shadcn@latest init -d --base-color neutral
+
+# 3. Add the components we'll use
+pnpm dlx shadcn@latest add button input card label alert form separator dropdown-menu
+
+# 4. Install a few extras we'll need
+pnpm add jsonwebtoken
+pnpm add -D @types/jsonwebtoken
+
+# 5. Copy the custom files from this delivery (lib/wms/*, middleware.ts, etc.)
+# 6. Fill in .env.local from .env.example
+# 7. Run it
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Local DNS for testing multi-tenant
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+You can't hit the storefront as `localhost` and have host resolution work. Two
+options for local dev:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Option A — use a free wildcard DNS service:**
+- `http://acme.localtest.me:3002` → always resolves to 127.0.0.1
+- `http://blinkers.localtest.me:3002` → same
+- No hosts-file editing needed
 
-## Learn More
+**Option B — edit your hosts file** (`C:\Windows\System32\drivers\etc\hosts` on
+Windows, `/etc/hosts` elsewhere):
 
-To learn more about Next.js, take a look at the following resources:
+```
+127.0.0.1 acme.localhost
+127.0.0.1 blinkers.localhost
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Then `http://acme.localhost:3002` works.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Use whichever hostname you pick as the `primaryHost` value when creating the
+store in WMS.
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Coolify / any Next.js host:
+- Set env vars from `.env.example`
+- Configure additional domains in the app settings (one per customer store)
+- Each customer sets a CNAME pointing their domain at your Coolify host
