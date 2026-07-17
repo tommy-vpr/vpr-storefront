@@ -40,6 +40,10 @@ export default async function ShopHomePage() {
     isLoggedIn(),
   ]);
 
+  console.log("[WMS] url:", process.env.WMS_API_URL);
+  console.log("[WMS] key tail:", process.env.WMS_API_KEY?.slice(-6));
+  console.log("[WMS] key len:", process.env.WMS_API_KEY?.length);
+
   return (
     <>
       {/* Hero */}
