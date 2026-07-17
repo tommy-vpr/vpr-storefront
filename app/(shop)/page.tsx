@@ -4,6 +4,9 @@ import { getClient, isLoggedIn } from "@/lib/wms/session";
 import { CollectionCard } from "@/components/collection-card";
 import { BenefitsSection } from "@/components/benefitsSection";
 import { AnimatedTestimonials } from "@/components/ui/animated-testimonials";
+import { CollectionShowcase } from "@/components/collectionShowcase";
+import { QuickLinks } from "@/components/quickLinks";
+import Hero from "@/components/hero";
 
 const TESTIMONIALS = [
   {
@@ -74,17 +77,19 @@ export default async function ShopHomePage() {
           )}
         </div>
       </section> */}
-      <section className="mb-12 rounded-2xl border bg-card overflow-hidden">
-        <AnimatedTestimonials testimonials={TESTIMONIALS} autoplay />
-      </section>
+
+      <Hero />
 
       {/* Benefits */}
       <div className="mb-12">
         <BenefitsSection />
       </div>
 
+      <CollectionShowcase />
+      <QuickLinks />
+
       {/* Collection grid */}
-      <section id="collections">
+      {/* <section id="collections">
         <div className="mb-6 flex items-baseline justify-between">
           <h2 className="text-2xl font-semibold tracking-tight">Collections</h2>
         </div>
@@ -100,6 +105,10 @@ export default async function ShopHomePage() {
             ))}
           </div>
         )}
+      </section> */}
+
+      <section className="my-24 rounded-2xl border bg-card overflow-hidden">
+        <AnimatedTestimonials testimonials={TESTIMONIALS} autoplay />
       </section>
     </>
   );

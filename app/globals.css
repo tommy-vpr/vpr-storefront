@@ -128,3 +128,16 @@
     @apply font-sans;
   }
 }
+/* Swiper hero banner overrides */
+.hero-swiper .swiper-button-next,
+.hero-swiper .swiper-button-prev {
+  color: #fff;
+  --swiper-navigation-size: 28px;
+}
+.hero-swiper .swiper-pagination-bullet {
+  background: #fff;
+  opacity: 0.5;
+}
+.hero-swiper .swiper-pagination-bullet-active {
+  opacity: 1;
+}

@@ -3,6 +3,7 @@ import { CartProvider } from "@/components/cart-provider";
 import { Header } from "@/components/header";
 import Hero from "@/components/hero";
 import AnnouceBar from "@/components/announceBar";
+import { Footer } from "@/components/footer";
 
 export const dynamic = "force-dynamic";
 
@@ -40,8 +41,9 @@ export default async function ShopLayout({
           collections={collectionsRes.collections}
         />
         {/* Hero */}
-        {/* <Hero /> */}
+
         <main className="container mx-auto flex-1 px-4 py-8">{children}</main>
+        <Footer />
       </div>
     </CartProvider>
   );
