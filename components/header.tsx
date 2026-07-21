@@ -26,9 +26,10 @@ const BRAND_PLACEHOLDERS: { label: string; href: string }[] = [
 
 // Static utility links. Point to real pages once they exist.
 const UTILITY_LINKS: { label: string; href: string }[] = [
-  { label: "Wholesale App", href: "/wholesale" },
+  { label: "Wholesale App", href: "/wholesale-application" },
   { label: "Quick Order", href: "/quick-order" },
   { label: "Merch", href: "/collections/skwezed-merch" },
+  { label: "Contact", href: "/contact" },
 ];
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -53,7 +54,7 @@ export function Header({ store, customer, collections }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
-      <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
+      <div className="container p-2 md:p-6 lg:p-12 mx-auto flex h-16 items-center justify-between gap-4 px-4">
         <Link href="/" className="flex items-center gap-2">
           <Image
             src={"/images/logo-main.png"}

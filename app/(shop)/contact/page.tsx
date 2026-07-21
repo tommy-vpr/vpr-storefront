@@ -1,3 +1,4 @@
+import JotFormEmbed from "@/components/JotFormEmbed";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
@@ -29,15 +30,7 @@ export default function ContactPage() {
         </p>
 
         {/* JotForm embed — renders into the DOM at this position */}
-        <iframe
-          src="https://form.jotform.com/242285985260060"
-          width="100%"
-          height="900"
-          frameBorder="0"
-          style={{ border: 0 }}
-          allow="geolocation; microphone; camera; fullscreen"
-          title="Contact Form"
-        />
+        <JotFormEmbed formId="242285985260060" title="(VPR) Account Details" />
       </div>
     </section>
   );
