@@ -1,69 +1,44 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { getClient, isLoggedIn } from "@/lib/wms/session";
-import { WmsError } from "@/lib/wms/client";
-import { ProductCard } from "@/components/product-card";
+import { Suspense } from "react";
 
+import { CollectionHeader } from "./CollectionHeader";
+import { CollectionProducts } from "./CollectionProducts";
+import { CollectionToolbar } from "./CollectionToolbar";
+import { ProductsSpinner } from "./ProductsSpinner";
+
+/**
+ * Collection page.
+ *
+ * This component never fetches products. Each section owns its own data so
+ * the shell (header + toolbar) can flush while products are still resolving.
+ *
+ * CollectionHeader is intentionally OUTSIDE Suspense: it owns the 404 check,
+ * and a notFound() thrown from inside a Suspense boundary would render the
+ * not-found UI *inside* an already-committed page shell rather than replacing
+ * it. Keeping it outside means an unknown slug 404s cleanly.
+ */
 export default async function CollectionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const sp = await searchParams;
 
-  let data;
-  try {
-    data = await getClient().getCollection(slug, { take: 60 });
-  } catch (err) {
-    if (err instanceof WmsError && err.status === 404) notFound();
-    throw err;
-  }
-
-  const showPrice = await isLoggedIn();
-
-  console.log(
-    "COLLECTION PAGE:",
-    slug,
-    "→",
-    data?.products?.length ?? "no products",
-  );
+  // Serialized into the Suspense key so changing sort/search/page re-suspends
+  // the product grid and shows the spinner again, instead of silently swapping.
+  const productsKey = JSON.stringify(sp);
 
   return (
-    <div className="container mx-auto p-4 lg:p-12">
-      <div className="mb-8">
-        <Button asChild variant="ghost" size="sm" className="-ml-3 mb-4">
-          <Link href="/all-collections" className="flex items-center gap-1">
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            All collections
-          </Link>
-        </Button>
+    <>
+      <CollectionHeader slug={slug} />
 
-        <h1 className="text-3xl font-semibold tracking-tight">
-          {data.collection.name}
-        </h1>
-        {data.collection.description && (
-          <p className="mt-2 text-muted-foreground">
-            {data.collection.description}
-          </p>
-        )}
-        <p className="mt-3 text-sm text-muted-foreground">
-          {data.total} {data.total === 1 ? "product" : "products"}
-        </p>
-      </div>
+      <CollectionToolbar />
 
-      {data.products.length === 0 ? (
-        <p className="py-12 text-center text-muted-foreground">
-          No products in this collection yet.
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {data.products.map((p) => (
-            <ProductCard key={p.variantId} product={p} showPrice={showPrice} />
-          ))}
-        </div>
-      )}
-    </div>
+      <Suspense key={productsKey} fallback={<ProductsSpinner />}>
+        <CollectionProducts slug={slug} searchParams={sp} />
+      </Suspense>
+    </>
   );
 }

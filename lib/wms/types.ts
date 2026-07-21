@@ -26,6 +26,42 @@ export interface Collection {
   sortOrder: number;
 }
 
+/** Metadata for a single collection — the shape returned by GET /collections/:slug. */
+export interface CollectionMeta {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  /** Not yet returned by the WMS; present here for the Phase 2 metadata endpoint. */
+  heroImage?: string | null;
+  productCount?: number;
+}
+
+export type CollectionSort =
+  | "featured"
+  | "name-asc"
+  | "name-desc"
+  | "price-asc"
+  | "price-desc"
+  | "newest";
+
+export interface CollectionProductsParams {
+  take?: number;
+  skip?: number;
+  /** Reserved for cursor pagination once the WMS supports it. */
+  cursor?: string | null;
+  sort?: CollectionSort;
+  search?: string;
+  filters?: Record<string, string | string[] | undefined>;
+}
+
+export interface PageInfo {
+  hasNextPage: boolean;
+  endCursor: string | null;
+  /** Total matching products, when the API can supply it. */
+  total?: number;
+}
+
 export interface ProductListItem {
   productId: string;
   variantId: string;

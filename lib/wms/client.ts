@@ -13,6 +13,9 @@
 import type {
   AuthResponse,
   Collection,
+  CollectionMeta,
+  CollectionProductsParams,
+  PageInfo,
   CustomerProfile,
   InviteContext,
   OrderDetail,
@@ -33,6 +36,9 @@ export class WmsError extends Error {
     this.name = "WmsError";
   }
 }
+
+/** Default products-per-page for collection listings. */
+export const DEFAULT_PAGE_SIZE = 60;
 
 interface FetchOptions {
   token?: string | null;
@@ -124,24 +130,78 @@ export function wmsClient(token?: string | null) {
       });
     },
 
-    getCollection(
-      slug: string,
-      params?: { skip?: number; take?: number },
-    ): Promise<{
-      collection: { id: string; slug: string; name: string; description: string | null };
-      products: ProductListItem[];
+    /**
+     * Collection metadata only — no products.
+     *
+     * NOTE: the WMS still returns `products` on this endpoint. We deliberately
+     * do not surface them in the return type so callers can't reintroduce the
+     * coupling. Once the API stops embedding products, `take: 0` can be
+     * dropped and this becomes a genuinely cheap request.
+     *
+     * Cached longer than products: metadata rarely changes.
+     */
+    getCollection(slug: string): Promise<{
+      collection: CollectionMeta;
       total: number;
-      skip: number;
-      take: number;
     }> {
-      const qs = new URLSearchParams();
-      if (params?.skip !== undefined) qs.set("skip", String(params.skip));
-      if (params?.take !== undefined) qs.set("take", String(params.take));
-      const suffix = qs.toString() ? `?${qs.toString()}` : "";
-      return request(`/storefront/collections/${slug}${suffix}`, {
+      return request(`/storefront/collections/${slug}?take=0`, {
         ...base,
-        next: { revalidate: 30 },
+        next: { revalidate: 300, tags: [`collection:${slug}`] },
       });
+    },
+
+    /**
+     * Products within a collection.
+     *
+     * Supports skip/take today. `cursor`/`sort`/`filters`/`search` are wired
+     * through as query params for when the WMS supports them — until then the
+     * API ignores unknown params and `pageInfo` is derived client-side from
+     * skip/take/total.
+     */
+    async getCollectionProducts(
+      slug: string,
+      params?: CollectionProductsParams,
+    ): Promise<{ products: ProductListItem[]; pageInfo: PageInfo }> {
+      const take = params?.take ?? DEFAULT_PAGE_SIZE;
+      const skip = params?.skip ?? 0;
+
+      const qs = new URLSearchParams();
+      qs.set("skip", String(skip));
+      qs.set("take", String(take));
+      if (params?.cursor) qs.set("cursor", params.cursor);
+      if (params?.sort) qs.set("sort", params.sort);
+      if (params?.search) qs.set("search", params.search);
+      if (params?.filters) {
+        for (const [key, value] of Object.entries(params.filters)) {
+          if (value === undefined || value === null) continue;
+          for (const v of Array.isArray(value) ? value : [value]) {
+            qs.append(key, String(v));
+          }
+        }
+      }
+
+      const res = await request<{
+        products: ProductListItem[];
+        total: number;
+        skip: number;
+        take: number;
+        pageInfo?: PageInfo;
+      }>(`/storefront/collections/${slug}?${qs.toString()}`, {
+        ...base,
+        next: { revalidate: 30, tags: [`collection:${slug}:products`] },
+      });
+
+      // Prefer server-supplied pageInfo once the WMS provides it.
+      const pageInfo: PageInfo = res.pageInfo ?? {
+        hasNextPage: res.skip + res.products.length < res.total,
+        endCursor:
+          res.products.length > 0
+            ? String(res.skip + res.products.length)
+            : null,
+        total: res.total,
+      };
+
+      return { products: res.products, pageInfo };
     },
 
     getProduct(variantId: string): Promise<{ product: ProductDetail }> {
