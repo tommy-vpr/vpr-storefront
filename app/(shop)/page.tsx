@@ -43,9 +43,10 @@ export default async function ShopHomePage() {
     isLoggedIn(),
   ]);
 
-  console.log("[WMS] url:", process.env.WMS_API_URL);
-  console.log("[WMS] key tail:", process.env.WMS_API_KEY?.slice(-6));
-  console.log("[WMS] key len:", process.env.WMS_API_KEY?.length);
+  // console.log("[WMS] url:", process.env.WMS_API_URL);
+  // console.log("[WMS] key tail:", process.env.WMS_API_KEY?.slice(-6));
+  // console.log("[WMS] key len:", process.env.WMS_API_KEY?.length);
+  console.log("MAIN: ", collections);
 
   return (
     <>
@@ -80,13 +81,23 @@ export default async function ShopHomePage() {
 
       <Hero />
 
-      {/* Benefits */}
-      <div className="mb-12">
-        <BenefitsSection />
-      </div>
+      <section className="container mx-auto flex-1 px-4 py-8">
+        {/* Benefits */}
+        <div className="mb-12">
+          <BenefitsSection />
+        </div>
 
-      <CollectionShowcase />
-      <QuickLinks />
+        {/* Collection grid */}
+        <CollectionShowcase collections={collections} />
+
+        {/* Collection grid */}
+        <QuickLinks />
+
+        {/* Mid section callouts */}
+        <div className="my-24 rounded-2xl border bg-card overflow-hidden">
+          <AnimatedTestimonials testimonials={TESTIMONIALS} autoplay />
+        </div>
+      </section>
 
       {/* Collection grid */}
       {/* <section id="collections">
@@ -106,10 +117,6 @@ export default async function ShopHomePage() {
           </div>
         )}
       </section> */}
-
-      <section className="my-24 rounded-2xl border bg-card overflow-hidden">
-        <AnimatedTestimonials testimonials={TESTIMONIALS} autoplay />
-      </section>
     </>
   );
 }

@@ -23,13 +23,13 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-xl py-16 text-center">
+      <div className="mx-auto max-w-xl py-16 text-center min-h-[60vh] flex flex-col justify-center items-center">
         <h1 className="text-2xl font-semibold">Your cart is empty</h1>
         <p className="mt-2 text-muted-foreground">
           Add products from the shop to get started.
         </p>
         <Button asChild className="mt-6">
-          <Link href="/">Browse collections</Link>
+          <Link href="/all-collections">Browse collections</Link>
         </Button>
       </div>
     );
@@ -161,8 +161,8 @@ export default function CartPage() {
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
-        Orders are invoiced — no payment at checkout. Your sales rep will
-        follow up after submission.
+        Orders are invoiced — no payment at checkout. Your sales rep will follow
+        up after submission.
       </p>
     </div>
   );

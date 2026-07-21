@@ -17,9 +17,9 @@ const QUICK_LINKS = [
 
 const CUSTOMER_SERVICE = [
   { label: "Partnership Support", href: "/partnership-support" },
-  { label: "Shipping & Return", href: "/shipping-and-returns" },
-  { label: "Terms of Use", href: "/terms-of-use" },
-  { label: "Contact Us", href: "/contact-us" },
+  { label: "Shipping & Return", href: "/shipping-returns" },
+  { label: "Terms of Use", href: "/terms" },
+  { label: "Contact Us", href: "/contact" },
 ];
 
 function LinkItem({
@@ -75,7 +75,7 @@ function FooterColumn({
 
 export function Footer() {
   return (
-    <footer className="mt-16 bg-gray-100">
+    <footer className="bg-gray-100">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           <FooterColumn title="Quick Links">

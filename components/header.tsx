@@ -21,16 +21,14 @@ import Image from "next/image";
 // from here once you have collections assigned for it (the auto-grouping
 // will pick them up).
 const BRAND_PLACEHOLDERS: { label: string; href: string }[] = [
-  { label: "IJoy", href: "#" },
-  { label: "Nicci", href: "#" },
-  { label: "Blankers", href: "#" },
+  { label: "IJoy", href: "/collections/skwezed-ijoy" },
 ];
 
 // Static utility links. Point to real pages once they exist.
 const UTILITY_LINKS: { label: string; href: string }[] = [
   { label: "Wholesale App", href: "/wholesale" },
   { label: "Quick Order", href: "/quick-order" },
-  { label: "Merch", href: "/merch" },
+  { label: "Merch", href: "/collections/skwezed-merch" },
 ];
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -50,6 +48,8 @@ export function Header({ store, customer, collections }: HeaderProps) {
   const isAuthed = customer !== null;
   const displayName = customer?.name ?? customer?.email ?? null;
   const brandGroups = groupByBrand(collections);
+
+  console.log(brandGroups);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -81,7 +81,10 @@ export function Header({ store, customer, collections }: HeaderProps) {
                 <DropdownMenuContent align="start" className="w-48">
                   {cols.map((c) => (
                     <DropdownMenuItem asChild key={c.id}>
-                      <Link href={`/collections/${c.slug}`}>
+                      <Link
+                        href={`/collections/${c.slug}`}
+                        className="cursor-pointer w-full"
+                      >
                         {stripBrandPrefix(c.name, brand)}
                       </Link>
                     </DropdownMenuItem>
@@ -168,7 +171,7 @@ export function Header({ store, customer, collections }: HeaderProps) {
 function groupByBrand(collections: Collection[]): Map<string, Collection[]> {
   const groups = new Map<string, Collection[]>();
   for (const c of collections) {
-    const brand = c.name.split(/\s+/)[0] ?? c.name;
+    const brand = c.brand ?? c.name.split(/\s+/)[0] ?? c.name;
     const existing = groups.get(brand);
     if (existing) {
       existing.push(c);

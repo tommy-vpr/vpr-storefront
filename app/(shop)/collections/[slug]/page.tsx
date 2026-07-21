@@ -23,11 +23,18 @@ export default async function CollectionPage({
 
   const showPrice = await isLoggedIn();
 
+  console.log(
+    "COLLECTION PAGE:",
+    slug,
+    "→",
+    data?.products?.length ?? "no products",
+  );
+
   return (
-    <>
+    <div className="container mx-auto p-4 lg:p-12">
       <div className="mb-8">
         <Button asChild variant="ghost" size="sm" className="-ml-3 mb-4">
-          <Link href="/" className="flex items-center gap-1">
+          <Link href="/all-collections" className="flex items-center gap-1">
             <ChevronLeft className="mr-1 h-4 w-4" />
             All collections
           </Link>
@@ -57,6 +64,6 @@ export default async function CollectionPage({
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }
