@@ -4,6 +4,7 @@ import { Header } from "@/components/header";
 import Hero from "@/components/hero";
 import AnnouceBar from "@/components/announceBar";
 import { Footer } from "@/components/footer";
+import WarningLabel from "@/components/warningLabel";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default async function ShopLayout({
   return (
     <CartProvider storeSlug={storeRes.store.slug}>
       <div className="flex min-h-screen flex-col">
+        <WarningLabel />
         <AnnouceBar />
         <Header
           store={{
@@ -42,7 +44,7 @@ export default async function ShopLayout({
         />
         {/* Hero */}
 
-        <main className="container mx-auto flex-1 px-4 py-8">{children}</main>
+        <main>{children}</main>
         <Footer />
       </div>
     </CartProvider>
