@@ -24,6 +24,7 @@ export interface Collection {
   productCount: number;
   featured: boolean;
   sortOrder: number;
+  brand?: string | null;
 }
 
 /** Metadata for a single collection — the shape returned by GET /collections/:slug. */
