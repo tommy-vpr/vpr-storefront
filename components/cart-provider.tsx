@@ -24,14 +24,35 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
+/**
+ * localStorage namespace for the cart.
+ *
+ * Deliberately NOT derived from the store slug fetched at request time. Each
+ * storefront (vpr, itslitto, burningdaily) is its own deploy with its own
+ * origin, so localStorage is already isolated per brand — the slug added no
+ * separation, only a failure mode: if the layout ever fell back to a
+ * placeholder slug during a WMS outage, the key would change and every
+ * customer's cart would silently read as empty while their real items sat
+ * under the old key. That looks like data loss and is worse than an error
+ * page.
+ *
+ * A constant key cannot drift with backend state.
+ */
+const STORAGE_KEY = "cart:v1";
+
 export function CartProvider({
   storeSlug,
   children,
 }: {
-  storeSlug: string;
+  /**
+   * Retained only to migrate carts written under the old `cart:${slug}` key.
+   * Optional — the cart works without it. Safe to drop this prop once the
+   * migration window has passed.
+   */
+  storeSlug?: string;
   children: ReactNode;
 }) {
-  const storageKey = `cart:${storeSlug}`;
+  const storageKey = STORAGE_KEY;
   const [items, setItems] = useState<CartItem[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -39,7 +60,20 @@ export function CartProvider({
   // doesn't clobber existing storage on first render.
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(storageKey);
+      let raw = localStorage.getItem(storageKey);
+
+      // One-time migration off the old slug-scoped key. Only runs when the
+      // new key is empty, so it can never clobber a newer cart.
+      if (!raw && storeSlug) {
+        const legacyKey = `cart:${storeSlug}`;
+        const legacy = localStorage.getItem(legacyKey);
+        if (legacy) {
+          raw = legacy;
+          localStorage.setItem(storageKey, legacy);
+          localStorage.removeItem(legacyKey);
+        }
+      }
+
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) setItems(parsed);
@@ -48,7 +82,7 @@ export function CartProvider({
       // Corrupt JSON — fall back to empty cart
     }
     setIsHydrated(true);
-  }, [storageKey]);
+  }, [storageKey, storeSlug]);
 
   // Persist on every change, but only after hydration
   useEffect(() => {
