@@ -1,0 +1,50 @@
+// Storefront-local database.
+//
+// SCOPE: this database holds only what the WMS should NOT own — in-flight and
+// presentation-local state. The WMS remains the source of truth for orders,
+// customers, catalog, and inventory; the storefront reads those through
+// /storefront/* over HTTP and never stores copies.
+//
+// If this database were wiped, nothing of record would be lost.
+//
+// Local dev runs against Postgres in the same Docker container as the WMS, in
+// a SEPARATE database (storefront_vpr). Production is a dedicated Supabase
+// project per brand.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+// Prisma 7 removed `url` / `directUrl` from the schema — connection strings
+// live in prisma.config.ts (for migrations) and in the PrismaClient adapter
+// (for the app). See lib/db.ts.
+datasource db {
+  provider = "postgresql"
+}
+
+/// Webhook events already received from the WMS.
+///
+/// Delivery from the WMS is AT-LEAST-ONCE: any non-2xx response triggers a
+/// retry with exponential backoff, and a queue retry re-sends the SAME
+/// deterministic eventId. This table is what makes reprocessing safe.
+///
+/// The receiver claims the id here BEFORE handling the event, so two
+/// concurrent deliveries of the same event can't both proceed — the second
+/// insert hits the primary key and is recognized as a duplicate.
+model ProcessedEvent {
+  /// The WMS's deterministic id, e.g. "order.shipped:cmrmqaco70003pg7zh47a0k7w".
+  /// Globally unique on its own (order ids are cuids), so no composite key is
+  /// needed even though the WMS is multi-store.
+  eventId String @id
+
+  eventType String
+  orderId   String?
+
+  receivedAt DateTime @default(now())
+
+  /// Supports pruning old rows — the WMS retry window is under an hour, so
+  /// anything beyond a few days is dead weight.
+  @@index([receivedAt])
+  @@map("processed_events")
+}
