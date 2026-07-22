@@ -62,9 +62,18 @@ export function CartProvider({
     try {
       let raw = localStorage.getItem(storageKey);
 
-      // One-time migration off the old slug-scoped key. Only runs when the
-      // new key is empty, so it can never clobber a newer cart.
-      if (!raw && storeSlug) {
+      // One-time migration off the old slug-scoped key.
+      //
+      // Treats an EMPTY array as absent, not just a missing key. The persist
+      // effect can write "[]" before this migration ever runs, and "[]" is
+      // truthy — so checking presence alone would skip the migration forever
+      // and strand the customer's real cart under the old key.
+      //
+      // Still safe: it only overwrites an empty cart, so it can never clobber
+      // a newer one.
+      const isEmpty = !raw || raw === "[]";
+
+      if (isEmpty && storeSlug) {
         const legacyKey = `cart:${storeSlug}`;
         const legacy = localStorage.getItem(legacyKey);
         if (legacy) {
