@@ -46,9 +46,19 @@ export const AnimatedTestimonials = ({
     }
   }, [autoplay]);
 
-  const randomRotateY = () => {
-    return Math.floor(Math.random() * 21) - 10;
-  };
+  /**
+   * Rotation for the scattered-card effect.
+   *
+   * Deterministic, derived from the card's index. This previously used
+   * Math.random(), which produced a different value on the server than on the
+   * client and broke hydration on every page load — React cannot reconcile a
+   * style attribute that changed between SSR and the first client render.
+   *
+   * The multiplier is coprime with the modulus so consecutive cards get
+   * visibly different angles rather than a repeating pattern. Range is
+   * -10..10, matching the previous random spread.
+   */
+  const rotateFor = (index: number) => ((index * 13) % 21) - 10;
 
   return (
     // Outer: full-width colored background
@@ -71,13 +81,13 @@ export const AnimatedTestimonials = ({
                       opacity: 0,
                       scale: 0.9,
                       z: -100,
-                      rotate: randomRotateY(),
+                      rotate: rotateFor(index),
                     }}
                     animate={{
                       opacity: isActive(index) ? 1 : 0.7,
                       scale: isActive(index) ? 1 : 0.95,
                       z: isActive(index) ? 0 : -100,
-                      rotate: isActive(index) ? 0 : randomRotateY(),
+                      rotate: isActive(index) ? 0 : rotateFor(index),
                       zIndex: isActive(index)
                         ? 40
                         : testimonials.length + 2 - index,
@@ -87,7 +97,7 @@ export const AnimatedTestimonials = ({
                       opacity: 0,
                       scale: 0.9,
                       z: 100,
-                      rotate: randomRotateY(),
+                      rotate: rotateFor(index),
                     }}
                     transition={{
                       duration: 0.4,
