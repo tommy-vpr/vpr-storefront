@@ -44,7 +44,7 @@ export default async function ShopLayout({
         />
         {/* Hero */}
 
-        <main className="container p-2 md:p-6 lg:p-12 mx-auto">{children}</main>
+        <main className="container mx-auto py-12">{children}</main>
         <Footer />
       </div>
     </CartProvider>

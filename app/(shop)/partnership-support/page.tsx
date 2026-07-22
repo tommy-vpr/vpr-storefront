@@ -81,7 +81,7 @@ export default function Page() {
 
   return (
     <section className="lg:px-4 lg:py-16 sm:px-8">
-      <div className="mx-auto max-w-6xl rounded-2xl bg-gray-50 p-4 lg:p-6 shadow-2xl shadow-gray-700/20 backdrop-blur-sm sm:p-8">
+      <div className="mx-auto max-w-6xl rounded-2xl p-4 lg:p-6 border border-gray-200 shadow-2xl shadow-gray-400/20 backdrop-blur-sm sm:p-8">
         <h1
           className="mb-8 rounded-lg px-6 py-8 text-center text-xl lg:text-3xl text-white font-bold sm:text-4xl"
           style={{ background: ACCENT }}
@@ -125,7 +125,7 @@ export default function Page() {
         </div>
 
         {/* Tab buttons */}
-        <div className="mb-6 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-3">
+        <div className="mb-6 border-b border-gray-200 pb-2  grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-3">
           {TABS.map(({ id, label, icon: Icon }) => {
             const isActive = activeTab === id;
             return (

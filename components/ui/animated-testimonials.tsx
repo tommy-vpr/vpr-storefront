@@ -14,7 +14,7 @@ type Testimonial = {
   bgColor?: string;
   /** Set true if the background is dark so text switches to light */
   darkBg?: boolean;
-}[];
+};
 
 export const AnimatedTestimonials = ({
   testimonials,

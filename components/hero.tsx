@@ -46,7 +46,7 @@ const SLIDES: Slide[] = [
 
 const Hero = () => {
   return (
-    <section className="hero-swiper mb-12 w-full">
+    <section className="hero-swiper mb-12 w-full rounded-xl overflow-hidden">
       <Swiper
         modules={[Autoplay, Pagination, Navigation, EffectFade]}
         effect="fade"

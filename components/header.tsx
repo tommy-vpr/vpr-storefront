@@ -54,7 +54,7 @@ export function Header({ store, customer, collections }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
-      <div className="container p-2 md:p-6 lg:p-12 mx-auto flex h-16 items-center justify-between gap-4 px-4">
+      <div className="container p-2 mx-auto flex h-16 items-center justify-between gap-4 px-4">
         <Link href="/" className="flex items-center gap-2">
           <Image
             src={"/images/logo-main.png"}
