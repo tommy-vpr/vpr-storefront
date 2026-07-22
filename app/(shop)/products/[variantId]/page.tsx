@@ -7,6 +7,7 @@ import { getClient, isLoggedIn } from "@/lib/wms/session";
 import { WmsError } from "@/lib/wms/client";
 import { formatPrice } from "@/lib/format";
 import { AddToCartButton } from "@/components/add-to-cart-button";
+import { VariantPicker } from "@/components/variant-picker";
 
 export default async function ProductPage({
   params,
@@ -64,6 +65,11 @@ export default async function ProductPage({
           <p className="mt-1 text-sm text-muted-foreground">
             {product.variantName}
           </p>
+
+          <VariantPicker
+            variants={product.variants}
+            selectedVariantId={product.selectedVariantId ?? product.variantId}
+          />
 
           <div className="mt-6">
             {loggedIn ? (

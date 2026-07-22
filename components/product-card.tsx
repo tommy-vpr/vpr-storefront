@@ -11,7 +11,7 @@ export function ProductCard({
 }) {
   return (
     <Link
-      href={`/products/${product.variantId}`}
+      href={`/products/${product.defaultVariantId ?? product.variantId}`}
       className="group flex flex-col overflow-hidden rounded-lg border bg-card transition hover:border-foreground/30 hover:shadow-sm"
     >
       <div className="relative aspect-square bg-muted">
@@ -39,7 +39,11 @@ export function ProductCard({
         <h3 className="line-clamp-2 text-sm font-medium leading-tight group-hover:underline">
           {product.name}
         </h3>
-        <p className="text-xs text-muted-foreground">{product.variantName}</p>
+        {product.variantCount > 1 ? (
+          <p className="text-xs text-muted-foreground">
+            {product.variants.map((v) => v.label).join(" · ")}
+          </p>
+        ) : null}
 
         <div className="mt-auto pt-2">
           {showPrice ? (

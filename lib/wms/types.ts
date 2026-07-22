@@ -24,6 +24,7 @@ export interface Collection {
   productCount: number;
   featured: boolean;
   sortOrder: number;
+  brand?: string | null;
 }
 
 /** Metadata for a single collection — the shape returned by GET /collections/:slug. */
@@ -62,14 +63,31 @@ export interface PageInfo {
   total?: number;
 }
 
+/** A single sellable variant, as returned inside a product. */
+export interface ProductVariantOption {
+  variantId: string;
+  sku: string;
+  /** Full stored name, e.g. "30ml - Skwezed Salt - Banana — 25mg". */
+  name: string;
+  /** Picker button text with the product-name prefix stripped, e.g. "25mg". */
+  label: string;
+  imageUrl: string | null;
+  price: number | null;
+}
+
 export interface ProductListItem {
   productId: string;
+  /** Default variant — kept as the card's link target. */
   variantId: string;
+  defaultVariantId: string;
   sku: string;
   name: string;
   variantName: string;
   imageUrl: string | null;
+  /** Default variant's price. Not a range — see storefront.routes.ts. */
   price: number | null;
+  variantCount: number;
+  variants: ProductVariantOption[];
   brand: string | null;
   tags: string[];
 }
@@ -77,6 +95,12 @@ export interface ProductListItem {
 export interface ProductDetail {
   productId: string;
   variantId: string;
+  /** All sellable variants of this product — powers the picker. */
+  variants: ProductVariantOption[];
+  variantCount: number;
+  selectedVariantId: string;
+  /** Label of the variant currently being viewed, e.g. "25mg". */
+  variantLabel: string;
   sku: string;
   name: string;
   variantName: string;
