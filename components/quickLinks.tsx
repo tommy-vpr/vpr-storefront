@@ -20,7 +20,7 @@ const LINKS: {
   {
     label: "Wholesale",
     src: "/images/ql_wholesale.webp",
-    href: "/wholesale",
+    href: "/wholesale-application",
   },
 ];
 
