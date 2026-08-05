@@ -29,7 +29,8 @@ function verify(
   timestamp: number,
   signature: string,
 ): { valid: boolean; reason?: string } {
-  if (!Number.isFinite(timestamp)) return { valid: false, reason: "bad_timestamp" };
+  if (!Number.isFinite(timestamp))
+    return { valid: false, reason: "bad_timestamp" };
 
   const now = Math.floor(Date.now() / 1000);
   if (Math.abs(now - timestamp) > MAX_SKEW_SECONDS) {
@@ -113,6 +114,12 @@ export async function POST(request: Request) {
     envelope = JSON.parse(body) as Envelope;
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  // ── Reject events meant for a different store ──────────────────────────
+  if (envelope.storeId !== process.env.WMS_STORE_ID) {
+    console.warn(`[wms-webhook] wrong store: ${envelope.storeId}`);
+    return NextResponse.json({ error: "wrong_store" }, { status: 401 });
   }
 
   // ── Claim the event ───────────────────────────────────────────────────────
