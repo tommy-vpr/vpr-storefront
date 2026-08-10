@@ -32,6 +32,9 @@ const UUID_RE =
 
 export async function POST(request: Request) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+
+  console.log("[places] key len", apiKey?.length, "tail", apiKey?.slice(-6));
+
   if (!apiKey) {
     // 503, not 500: the form treats this as "autocomplete unavailable" and
     // falls back to plain typing rather than blocking checkout.
@@ -81,7 +84,11 @@ export async function POST(request: Request) {
     });
 
     if (!res.ok) {
-      console.error("[places] autocomplete failed", res.status, await res.text().catch(() => ""));
+      console.error(
+        "[places] autocomplete failed",
+        res.status,
+        await res.text().catch(() => ""),
+      );
       return NextResponse.json({ suggestions: [] });
     }
 

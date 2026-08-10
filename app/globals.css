@@ -141,3 +141,7 @@
 .hero-swiper .swiper-pagination-bullet-active {
   opacity: 1;
 }
+
+html {
+  scrollbar-gutter: stable;
+}
