@@ -184,6 +184,60 @@ export interface OrderSummary {
   createdAt: string;
 }
 
+/**
+ * The single-use payment nonce Accept.js hands back in the browser. Card data
+ * goes straight from the customer to Authorize.net and never reaches our
+ * servers — this pair is all we ever hold, and it dies in ~15 minutes.
+ */
+export interface OpaqueData {
+  dataDescriptor: string;
+  dataValue: string;
+}
+
+/**
+ * The 201 from POST /storefront/orders. NOT the same shape as OrderDetail —
+ * it carries guestAccessToken (the only time it is ever returned) and omits
+ * addresses and tracking.
+ *
+ * guestAccessToken is what the confirmation link is built from, so it must
+ * reach the confirmation email and nowhere else — it is deliberately absent
+ * from every lookup response.
+ */
+export interface PlacedOrder {
+  id: string;
+  orderNumber: string;
+  guestAccessToken: string | null;
+  status: string;
+  paymentStatus: string;
+  totalAmount: number;
+  createdAt: string;
+  items: Array<{
+    sku: string;
+    productVariantId: string | null;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>;
+}
+
+/**
+ * What a guest lookup returns — status and tracking, nothing more. Both lookup
+ * routes share this shape deliberately: anyone holding the link or the order
+ * number can see it, so it carries no line items, addresses, or prices beyond
+ * the total.
+ */
+export interface OrderStatus {
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  totalAmount: number;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  carrier: string | null;
+  shippedAt: string | null;
+  createdAt: string;
+}
+
 export interface OrderDetail {
   id: string;
   orderNumber: string;
