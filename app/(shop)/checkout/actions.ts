@@ -13,9 +13,11 @@
  * nothing at the wrong price.
  */
 
+import { headers } from "next/headers";
 import { getClient } from "@/lib/wms/session";
 import { getSessionToken } from "@/lib/wms/session";
 import { wmsClient, WmsError } from "@/lib/wms/client";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 import type { OpaqueData, ShippingAddress } from "@/lib/wms/types";
 
 export interface CheckoutInput {
@@ -24,6 +26,12 @@ export interface CheckoutInput {
   shippingAddress: ShippingAddress;
   billingAddress?: ShippingAddress;
   opaqueData: OpaqueData;
+  /**
+   * Cosmetic only — variantId → display name, taken from the browser cart so
+   * the receipt reads "Skwezed Salt Watermelon" instead of a SKU. Never used
+   * for money: quantities and amounts come from the WMS's own response.
+   */
+  displayNames?: Record<string, string>;
 }
 
 export type CheckoutResult =
@@ -57,6 +65,39 @@ export async function placeOrderAction(
       email: input.email,
       payment: { opaqueData: input.opaqueData },
     });
+
+    // Receipt. Non-blocking and deliberately after the order exists: the money
+    // is already authorized, so a dead mail provider must not turn a placed
+    // order into an error the customer will retry — and a retry would mean a
+    // second card charge.
+    if (order.guestAccessToken) {
+      try {
+        const h = await headers();
+        const host = h.get("host");
+        const proto = h.get("x-forwarded-proto") ?? "https";
+        // Derived from the request rather than an env var so this works on a
+        // cloudflared tunnel and in production without extra configuration.
+        const base = process.env.NEXT_PUBLIC_SITE_URL ?? `${proto}://${host}`;
+
+        await sendOrderConfirmationEmail({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          to: input.email,
+          totalAmount: order.totalAmount,
+          statusUrl: `${base}/orders/${order.guestAccessToken}`,
+          items: order.items.map((i) => ({
+            name:
+              (i.productVariantId &&
+                input.displayNames?.[i.productVariantId]) ||
+              i.sku,
+            quantity: i.quantity,
+            totalPrice: i.totalPrice,
+          })),
+        });
+      } catch (err) {
+        console.error("[checkout] confirmation email failed", err);
+      }
+    }
 
     return {
       ok: true,

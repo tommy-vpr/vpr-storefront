@@ -182,6 +182,14 @@ export function CheckoutForm({
         shippingAddress: shipping,
         billingAddress: billingSame ? undefined : billing,
         opaqueData,
+        // Names only, so the receipt reads like the cart did. Amounts on the
+        // receipt come from the WMS, not from here.
+        displayNames: Object.fromEntries(
+          items.map((i) => [
+            i.variantId,
+            i.variantName ? `${i.name} — ${i.variantName}` : i.name,
+          ]),
+        ),
       });
 
       if (!result.ok) {
