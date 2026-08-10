@@ -65,19 +65,29 @@ export function CheckoutForm({
   clientKey,
   loginId,
   turnstileSiteKey,
+  initialEmail,
+  initialAddress,
 }: {
   acceptJsUrl: string;
   clientKey: string;
   loginId: string;
   /** Empty when Turnstile isn't configured — the widget is then skipped. */
   turnstileSiteKey: string;
+  /** The signed-in customer's email. Empty for a guest. */
+  initialEmail: string;
+  /** Saved profile address, when signed in with one. */
+  initialAddress?: Partial<ShippingAddress>;
 }) {
+  const signedIn = initialEmail !== "";
   const router = useRouter();
   const { items, subtotal, isHydrated, clear } = useCart();
 
   const [acceptReady, setAcceptReady] = useState(false);
-  const [email, setEmail] = useState("");
-  const [shipping, setShipping] = useState<ShippingAddress>(EMPTY_ADDRESS);
+  const [email, setEmail] = useState(initialEmail);
+  const [shipping, setShipping] = useState<ShippingAddress>({
+    ...EMPTY_ADDRESS,
+    ...initialAddress,
+  });
   const [billing, setBilling] = useState<ShippingAddress>(EMPTY_ADDRESS);
   const [billingSame, setBillingSame] = useState(true);
   const [card, setCard] = useState({ number: "", month: "", year: "", cvv: "" });
@@ -302,9 +312,23 @@ export function CheckoutForm({
           <h2 className="text-lg font-medium">Contact</h2>
           <div className="grid gap-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              // Locked when signed in: the WMS takes the token's email as
+              // authoritative and ignores whatever the body says, so an
+              // editable box here would be a lie — they'd type a new address
+              // and the receipt would still go to the account's.
+              readOnly={signedIn}
+              disabled={signedIn}
+            />
             <p className="text-xs text-muted-foreground">
-              Your receipt and tracking updates go here.
+              {signedIn
+                ? "Sent to your account email. Change it in your account settings."
+                : "Your receipt and tracking updates go here."}
             </p>
           </div>
         </section>

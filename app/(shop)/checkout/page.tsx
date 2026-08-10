@@ -1,4 +1,6 @@
 import { CheckoutForm } from "./CheckoutForm";
+import { tryGetAuthedClient } from "@/lib/wms/session";
+import type { ShippingAddress } from "@/lib/wms/types";
 
 /**
  * Checkout.
@@ -11,6 +13,11 @@ import { CheckoutForm } from "./CheckoutForm";
  * them in the browser, and neither can move money on its own. The transaction
  * key, which can, lives encrypted on the WMS Store row and is never exposed to
  * this app at all.
+ *
+ * For a signed-in customer it also prefills the form from their saved profile.
+ * The read happens HERE rather than in the client component so the JWT never
+ * leaves the server, and it degrades to an empty form on any failure — a
+ * profile lookup must never be able to block a purchase.
  */
 
 export const dynamic = "force-dynamic";
@@ -18,7 +25,7 @@ export const dynamic = "force-dynamic";
 const SANDBOX_ACCEPT_JS = "https://jstest.authorize.net/v1/Accept.js";
 const PRODUCTION_ACCEPT_JS = "https://js.authorize.net/v1/Accept.js";
 
-export default function CheckoutPage() {
+export default async function CheckoutPage() {
   const clientKey = process.env.NEXT_PUBLIC_ACCEPT_CLIENT_KEY ?? "";
   const loginId = process.env.NEXT_PUBLIC_ACCEPT_LOGIN_ID ?? "";
 
@@ -27,6 +34,32 @@ export default function CheckoutPage() {
   // and getting real charges in a dev environment — is the one that hurts.
   const sandbox = process.env.NEXT_PUBLIC_ACCEPT_SANDBOX !== "false";
   const acceptJsUrl = sandbox ? SANDBOX_ACCEPT_JS : PRODUCTION_ACCEPT_JS;
+
+  // Prefill for a signed-in customer. Wrapped because an expired JWT only
+  // fails at the WMS, and the right outcome then is an empty form, not an
+  // error page between a customer and their order.
+  let initialEmail = "";
+  let initialAddress: Partial<ShippingAddress> | undefined;
+  try {
+    const client = await tryGetAuthedClient();
+    if (client) {
+      const { customer } = await client.getMe();
+      initialEmail = customer.email;
+      initialAddress = {
+        name: customer.name ?? "",
+        address1: customer.addressLine1 ?? "",
+        address2: customer.addressLine2 ?? "",
+        city: customer.city ?? "",
+        state: customer.state ?? "",
+        zip: customer.zip ?? "",
+        country: customer.countryCode ?? "US",
+        phone: customer.phone ?? "",
+      };
+    }
+  } catch {
+    // Signed out, expired, or the WMS is unhappy — fall through to a blank
+    // form. Checkout still works; they just type it themselves.
+  }
 
   if (!clientKey || !loginId) {
     return (
@@ -48,6 +81,8 @@ export default function CheckoutPage() {
         clientKey={clientKey}
         loginId={loginId}
         turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
+        initialEmail={initialEmail}
+        initialAddress={initialAddress}
       />
     </div>
   );
