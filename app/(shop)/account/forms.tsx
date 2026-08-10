@@ -45,10 +45,18 @@ export function ProfileForm({ customer }: { customer: CustomerProfile }) {
     emptyState,
   );
 
-  // The address fields become CONTROLLED here, unlike the rest of the form,
-  // because picking a suggestion has to write into four of them at once.
-  // defaultValue can't do that — it only seeds the first render.
+  // EVERY field is controlled, for two separate reasons. The address fields
+  // have to be, because picking a suggestion writes into four of them at once
+  // and defaultValue only seeds the first render. Name and phone follow suit
+  // because updateProfileAction calls revalidatePath("/account"), which
+  // re-renders this component with fresh props — and a defaultValue that
+  // changes after mount is what Base UI warns about ("changing the default
+  // value state of an uncontrolled FieldControl"). Harmless in practice, since
+  // React ignores it, but it would silently show stale text if the server ever
+  // normalized a value on save.
   const [addr, setAddr] = useState({
+    name: customer.name ?? "",
+    phone: customer.phone ?? "",
     addressLine1: customer.addressLine1 ?? "",
     addressLine2: customer.addressLine2 ?? "",
     city: customer.city ?? "",
@@ -58,6 +66,7 @@ export function ProfileForm({ customer }: { customer: CustomerProfile }) {
 
   const applyResolved = (r: ResolvedAddress) =>
     setAddr((prev) => ({
+      ...prev,
       addressLine1: r.address1,
       // Google rarely returns a unit; keep whatever they typed if it doesn't.
       addressLine2: r.address2 || prev.addressLine2,
@@ -75,7 +84,8 @@ export function ProfileForm({ customer }: { customer: CustomerProfile }) {
         <Input
           id="name"
           name="name"
-          defaultValue={customer.name ?? ""}
+          value={addr.name}
+          onChange={(e) => setAddr((p) => ({ ...p, name: e.target.value }))}
           autoComplete="name"
           disabled={pending}
         />
@@ -87,7 +97,8 @@ export function ProfileForm({ customer }: { customer: CustomerProfile }) {
           id="phone"
           name="phone"
           type="tel"
-          defaultValue={customer.phone ?? ""}
+          value={addr.phone}
+          onChange={(e) => setAddr((p) => ({ ...p, phone: e.target.value }))}
           autoComplete="tel"
           disabled={pending}
         />
