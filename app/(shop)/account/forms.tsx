@@ -12,9 +12,12 @@ import {
 import {
   updateProfileAction,
   changePasswordAction,
-  emptyState,
   type FormState,
 } from "./actions";
+
+// Defined here rather than alongside the actions: a "use server" module can
+// only export async functions.
+const emptyState: FormState = { error: null, success: null };
 import type { CustomerProfile } from "@/lib/wms/types";
 import { useState } from "react";
 

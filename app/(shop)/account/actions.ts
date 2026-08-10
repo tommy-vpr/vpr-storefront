@@ -9,7 +9,10 @@ export interface FormState {
   success: string | null;
 }
 
-export const emptyState: FormState = { error: null, success: null };
+// NOTE: the initial state lives in forms.tsx, not here. A "use server" file may
+// only export async functions — exporting a plain object from one throws
+// "can only export async functions, found object" at module evaluation. Types
+// are fine, since they're erased before the loader sees them.
 
 /**
  * Profile update.
