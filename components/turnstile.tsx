@@ -82,17 +82,21 @@ export function Turnstile({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
-  const rendered = useRef(false);
 
   useEffect(() => {
-    if (rendered.current) return;
-    rendered.current = true;
-
-    let cancelled = false;
-
+    // Guarded on the WIDGET ID, not a mount flag, and with no cancellation.
+    //
+    // React 19 StrictMode double-invokes effects in dev. A mount flag plus a
+    // cancel-on-cleanup meant: first run sets the flag and starts loading,
+    // cleanup cancels it, second run returns early because the flag is set,
+    // and the resolved script then bails on the cancelled flag. Nothing ever
+    // rendered, and nothing errored either — an empty div and a silent
+    // failure. Checking the widget id instead makes the second run a genuine
+    // no-op only once a widget actually exists.
     loadScript()
       .then(() => {
-        if (cancelled || !containerRef.current || !window.turnstile) return;
+        if (widgetIdRef.current) return;
+        if (!containerRef.current || !window.turnstile) return;
 
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           sitekey: siteKey,
@@ -122,11 +126,11 @@ export function Turnstile({
         onError?.();
       });
 
-    return () => {
-      cancelled = true;
-    };
-    // Intentionally mount-only: re-rendering the widget would invalidate the
-    // token the customer already earned.
+    // No cleanup that removes the widget: in StrictMode the teardown would
+    // run between the two dev invocations and destroy the widget the second
+    // one is about to skip creating. The widget lives as long as the page.
+    // Intentionally mount-only: re-rendering it would invalidate the token
+    // the customer already earned.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
