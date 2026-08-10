@@ -36,7 +36,7 @@ export async function updateProfileAction(
 
   try {
     const client = await getAuthedClient();
-    await client.updateProfile({
+    await client.updateMe({
       name,
       phone,
       addressLine1,
@@ -49,6 +49,9 @@ export async function updateProfileAction(
     if (err instanceof WmsError && err.status === 401) {
       return { error: "Your session expired. Please sign in again.", success: null };
     }
+    // Logged, not swallowed: without this a typo'd client method reads to the
+    // customer as a save failure and to the developer as nothing at all.
+    console.error("[account] updateMe failed", err);
     return { error: "Couldn't save those changes. Please try again.", success: null };
   }
 
@@ -89,6 +92,7 @@ export async function changePasswordAction(
         return { error: "That current password isn't right.", success: null };
       }
     }
+    console.error("[account] changePassword failed", err);
     return { error: "Couldn't change your password. Please try again.", success: null };
   }
 
