@@ -6,12 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  AddressAutocomplete,
+  type ResolvedAddress,
+} from "@/components/address-autocomplete";
+import {
   updateProfileAction,
   changePasswordAction,
   emptyState,
   type FormState,
 } from "./actions";
 import type { CustomerProfile } from "@/lib/wms/types";
+import { useState } from "react";
 
 function Feedback({ state }: { state: FormState }) {
   if (state.error) {
@@ -36,6 +41,27 @@ export function ProfileForm({ customer }: { customer: CustomerProfile }) {
     updateProfileAction,
     emptyState,
   );
+
+  // The address fields become CONTROLLED here, unlike the rest of the form,
+  // because picking a suggestion has to write into four of them at once.
+  // defaultValue can't do that — it only seeds the first render.
+  const [addr, setAddr] = useState({
+    addressLine1: customer.addressLine1 ?? "",
+    addressLine2: customer.addressLine2 ?? "",
+    city: customer.city ?? "",
+    state: customer.state ?? "",
+    zip: customer.zip ?? "",
+  });
+
+  const applyResolved = (r: ResolvedAddress) =>
+    setAddr((prev) => ({
+      addressLine1: r.address1,
+      // Google rarely returns a unit; keep whatever they typed if it doesn't.
+      addressLine2: r.address2 || prev.addressLine2,
+      city: r.city,
+      state: r.state,
+      zip: r.zip,
+    }));
 
   return (
     <form action={formAction} className="space-y-4">
@@ -66,11 +92,12 @@ export function ProfileForm({ customer }: { customer: CustomerProfile }) {
 
       <div className="space-y-2">
         <Label htmlFor="addressLine1">Address</Label>
-        <Input
+        <AddressAutocomplete
           id="addressLine1"
           name="addressLine1"
-          defaultValue={customer.addressLine1 ?? ""}
-          autoComplete="address-line1"
+          value={addr.addressLine1}
+          onChange={(v) => setAddr((p) => ({ ...p, addressLine1: v }))}
+          onResolved={applyResolved}
           disabled={pending}
         />
       </div>
@@ -80,7 +107,10 @@ export function ProfileForm({ customer }: { customer: CustomerProfile }) {
         <Input
           id="addressLine2"
           name="addressLine2"
-          defaultValue={customer.addressLine2 ?? ""}
+          value={addr.addressLine2}
+          onChange={(e) =>
+            setAddr((p) => ({ ...p, addressLine2: e.target.value }))
+          }
           autoComplete="address-line2"
           disabled={pending}
         />
@@ -92,7 +122,8 @@ export function ProfileForm({ customer }: { customer: CustomerProfile }) {
           <Input
             id="city"
             name="city"
-            defaultValue={customer.city ?? ""}
+            value={addr.city}
+            onChange={(e) => setAddr((p) => ({ ...p, city: e.target.value }))}
             autoComplete="address-level2"
             disabled={pending}
           />
@@ -102,7 +133,8 @@ export function ProfileForm({ customer }: { customer: CustomerProfile }) {
           <Input
             id="state"
             name="state"
-            defaultValue={customer.state ?? ""}
+            value={addr.state}
+            onChange={(e) => setAddr((p) => ({ ...p, state: e.target.value }))}
             autoComplete="address-level1"
             maxLength={2}
             disabled={pending}
@@ -113,7 +145,8 @@ export function ProfileForm({ customer }: { customer: CustomerProfile }) {
           <Input
             id="zip"
             name="zip"
-            defaultValue={customer.zip ?? ""}
+            value={addr.zip}
+            onChange={(e) => setAddr((p) => ({ ...p, zip: e.target.value }))}
             autoComplete="postal-code"
             disabled={pending}
           />

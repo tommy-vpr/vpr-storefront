@@ -46,17 +46,26 @@ function newSessionToken(): string {
 
 export function AddressAutocomplete({
   id,
+  name,
   value,
   onChange,
   onResolved,
   autoComplete = "address-line1",
+  disabled,
 }: {
   id: string;
+  /**
+   * Required when this sits inside a real <form> read via FormData — an input
+   * with no name is not submitted. Checkout doesn't need it (its state goes to
+   * a server action directly); the account profile form does.
+   */
+  name?: string;
   value: string;
   onChange: (v: string) => void;
   /** Fired when the customer picks a suggestion — fills the sibling fields. */
   onResolved: (addr: ResolvedAddress) => void;
   autoComplete?: string;
+  disabled?: boolean;
 }) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
@@ -158,10 +167,12 @@ export function AddressAutocomplete({
     <div ref={boxRef} className="relative">
       <Input
         id={id}
+        name={name}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         autoComplete={autoComplete}
+        disabled={disabled}
       />
       {loading && (
         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
