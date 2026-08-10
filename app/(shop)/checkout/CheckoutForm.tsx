@@ -21,6 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/components/cart-provider";
+import {
+  AddressAutocomplete,
+  type ResolvedAddress,
+} from "@/components/address-autocomplete";
 import { formatPrice } from "@/lib/format";
 import { placeOrderAction } from "./actions";
 import type { ShippingAddress } from "@/lib/wms/types";
@@ -94,6 +98,23 @@ export function CheckoutForm({
     setShipping((prev) => ({ ...prev, [k]: v }));
   const setBill = (k: keyof ShippingAddress, v: string) =>
     setBilling((prev) => ({ ...prev, [k]: v }));
+
+  /**
+   * Applied when a Places suggestion is chosen. Name and phone are the
+   * customer's, not Google's, so they survive untouched.
+   */
+  const applyResolved = (
+    set: (updater: (prev: ShippingAddress) => ShippingAddress) => void,
+  ) => (addr: ResolvedAddress) =>
+    set((prev) => ({
+      ...prev,
+      address1: addr.address1,
+      address2: addr.address2 || prev.address2,
+      city: addr.city,
+      state: addr.state,
+      zip: addr.zip,
+      country: addr.country || "US",
+    }));
 
   /** Tokenize with Accept.js. Resolves to the nonce, or rejects with a message. */
   const tokenize = () =>
@@ -206,6 +227,7 @@ export function CheckoutForm({
     value: ShippingAddress,
     set: (k: keyof ShippingAddress, v: string) => void,
     prefix: string,
+    onResolved: (addr: ResolvedAddress) => void,
   ) => (
     <div className="grid gap-3">
       <div className="grid gap-1.5">
@@ -214,7 +236,12 @@ export function CheckoutForm({
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor={`${prefix}-address1`}>Address</Label>
-        <Input id={`${prefix}-address1`} value={value.address1} onChange={(e) => set("address1", e.target.value)} autoComplete="address-line1" />
+        <AddressAutocomplete
+          id={`${prefix}-address1`}
+          value={value.address1}
+          onChange={(v) => set("address1", v)}
+          onResolved={onResolved}
+        />
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor={`${prefix}-address2`}>Apartment, suite (optional)</Label>
@@ -257,7 +284,7 @@ export function CheckoutForm({
 
         <section className="space-y-3">
           <h2 className="text-lg font-medium">Shipping address</h2>
-          {addressFields(shipping, setShip, "ship")}
+          {addressFields(shipping, setShip, "ship", applyResolved(setShipping))}
         </section>
 
         <section className="space-y-3">
@@ -276,7 +303,7 @@ export function CheckoutForm({
           {!billingSame && (
             <>
               <h2 className="text-lg font-medium">Billing address</h2>
-              {addressFields(billing, setBill, "bill")}
+              {addressFields(billing, setBill, "bill", applyResolved(setBilling))}
             </>
           )}
         </section>
