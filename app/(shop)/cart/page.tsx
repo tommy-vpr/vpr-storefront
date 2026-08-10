@@ -161,8 +161,8 @@ export default function CartPage() {
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
-        Orders are invoiced — no payment at checkout. Your sales rep will follow
-        up after submission.
+        Your card is authorized at checkout and charged when your order ships.
+        Shipping is calculated at fulfillment.
       </p>
     </div>
   );
