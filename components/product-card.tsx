@@ -2,13 +2,7 @@ import Link from "next/link";
 import { formatPrice } from "@/lib/format";
 import type { ProductListItem } from "@/lib/wms/types";
 
-export function ProductCard({
-  product,
-  showPrice,
-}: {
-  product: ProductListItem;
-  showPrice: boolean;
-}) {
+export function ProductCard({ product }: { product: ProductListItem }) {
   return (
     <Link
       href={`/products/${product.defaultVariantId ?? product.variantId}`}
@@ -46,12 +40,13 @@ export function ProductCard({
         ) : null}
 
         <div className="mt-auto pt-2">
-          {showPrice ? (
+          {/* Retail is guest-first: price is public. A variant with no
+              sellingPrice is not orderable at all, so it reads as unavailable
+              rather than as something to sign in for. */}
+          {product.price !== null ? (
             <p className="text-sm font-medium">{formatPrice(product.price)}</p>
           ) : (
-            <p className="text-xs text-muted-foreground">
-              Sign in for pricing
-            </p>
+            <p className="text-xs text-muted-foreground">Unavailable</p>
           )}
         </div>
       </div>

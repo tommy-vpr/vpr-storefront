@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { getClient, isLoggedIn } from "@/lib/wms/session";
+import { getClient } from "@/lib/wms/session";
 import { WmsError } from "@/lib/wms/client";
 import { formatPrice } from "@/lib/format";
 import { AddToCartButton } from "@/components/add-to-cart-button";
@@ -25,8 +25,11 @@ export default async function ProductPage({
     throw err;
   }
 
-  const loggedIn = await isLoggedIn();
-  const canAddToCart = loggedIn && product.price !== null;
+  // Retail is guest-first. The only thing that can stop a purchase is the
+  // product itself: a variant with no sellingPrice is not orderable, and the
+  // WMS rejects it server-side too (POST /storefront/orders filters on
+  // sellingPrice NOT NULL), so this is a display of that rule, not the rule.
+  const canAddToCart = product.price !== null;
 
   return (
     <>
@@ -72,19 +75,13 @@ export default async function ProductPage({
           />
 
           <div className="mt-6">
-            {loggedIn ? (
+            {product.price !== null ? (
               <p className="text-2xl font-medium">
                 {formatPrice(product.price)}
               </p>
             ) : (
               <p className="text-sm text-muted-foreground">
-                <Link
-                  href={`/login?redirect=/products/${product.variantId}`}
-                  className="font-medium text-foreground underline underline-offset-4"
-                >
-                  Sign in
-                </Link>{" "}
-                to see pricing
+                Not available for purchase
               </p>
             )}
           </div>
@@ -117,12 +114,6 @@ export default async function ProductPage({
                 price: product.price!,
               }}
             />
-          ) : !loggedIn ? (
-            <Button asChild size="lg" className="w-full">
-              <Link href={`/login?redirect=/products/${product.variantId}`}>
-                Sign in to purchase
-              </Link>
-            </Button>
           ) : (
             <p className="text-sm text-muted-foreground">
               This product isn&apos;t available for purchase right now.

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getClient, isLoggedIn } from "@/lib/wms/session";
+import { getClient } from "@/lib/wms/session";
 import { CollectionCard } from "@/components/collection-card";
 import { BenefitsSection } from "@/components/benefitsSection";
 import { AnimatedTestimonials } from "@/components/ui/animated-testimonials";
@@ -37,10 +37,9 @@ const TESTIMONIALS = [
 ];
 
 export default async function ShopHomePage() {
-  const [{ store }, { collections }, loggedIn] = await Promise.all([
+  const [{ store }, { collections }] = await Promise.all([
     getClient().getStore(),
     getClient().getCollections(),
-    isLoggedIn(),
   ]);
 
   // console.log("[WMS] url:", process.env.WMS_API_URL);
@@ -71,11 +70,9 @@ export default async function ShopHomePage() {
           <Button asChild size="lg">
             <Link href="#collections">Shop now</Link>
           </Button>
-          {!loggedIn && (
-            <Button asChild variant="outline" size="lg">
-              <Link href="/login">Sign in</Link>
-            </Button>
-          )}
+          <Button asChild variant="outline" size="lg">
+            <Link href="/login">Sign in</Link>
+          </Button>
         </div>
       </section> */}
 
