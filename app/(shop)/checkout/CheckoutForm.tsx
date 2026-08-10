@@ -25,6 +25,7 @@ import {
   AddressAutocomplete,
   type ResolvedAddress,
 } from "@/components/address-autocomplete";
+import { Turnstile, type TurnstileHandle } from "@/components/turnstile";
 import { formatPrice } from "@/lib/format";
 import { placeOrderAction } from "./actions";
 import type { ShippingAddress } from "@/lib/wms/types";
@@ -63,10 +64,13 @@ export function CheckoutForm({
   acceptJsUrl,
   clientKey,
   loginId,
+  turnstileSiteKey,
 }: {
   acceptJsUrl: string;
   clientKey: string;
   loginId: string;
+  /** Empty when Turnstile isn't configured — the widget is then skipped. */
+  turnstileSiteKey: string;
 }) {
   const router = useRouter();
   const { items, subtotal, isHydrated, clear } = useCart();
@@ -77,6 +81,8 @@ export function CheckoutForm({
   const [billing, setBilling] = useState<ShippingAddress>(EMPTY_ADDRESS);
   const [billingSame, setBillingSame] = useState(true);
   const [card, setCard] = useState({ number: "", month: "", year: "", cvv: "" });
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scriptRequested = useRef(false);
@@ -167,6 +173,15 @@ export function CheckoutForm({
     }
     if (items.length === 0) return setError("Your cart is empty.");
 
+    // Checked BEFORE tokenizing. A card nonce is single-use, so failing the
+    // bot check after tokenizing would spend it and force the customer to
+    // re-enter their card for a problem that has nothing to do with it.
+    if (turnstileSiteKey && !turnstileToken) {
+      return setError(
+        "Still verifying you're human — give it a second and try again.",
+      );
+    }
+
     setSubmitting(true);
     try {
       // Tokenize FIRST. If the card is malformed we never reach the server, so
@@ -182,6 +197,7 @@ export function CheckoutForm({
         shippingAddress: shipping,
         billingAddress: billingSame ? undefined : billing,
         opaqueData,
+        turnstileToken,
         // Names only, so the receipt reads like the cart did. Amounts on the
         // receipt come from the WMS, not from here.
         displayNames: Object.fromEntries(
@@ -194,6 +210,9 @@ export function CheckoutForm({
 
       if (!result.ok) {
         setError(result.message);
+        // Turnstile tokens are single-use, so a retry needs a fresh one —
+        // resending the rejected token would fail identically.
+        turnstileRef.current?.reset();
         // The nonce is spent whether or not the charge succeeded, so a retry
         // has to re-tokenize. Clearing the number makes that unavoidable
         // rather than a silent second failure.
@@ -376,6 +395,19 @@ export function CheckoutForm({
             <span>{formatPrice(subtotal)}</span>
           </div>
         </div>
+
+        {turnstileSiteKey && (
+          <Turnstile
+            siteKey={turnstileSiteKey}
+            onToken={setTurnstileToken}
+            handleRef={turnstileRef}
+            onError={() =>
+              setError(
+                "Verification failed to load. Refresh the page and try again.",
+              )
+            }
+          />
+        )}
 
         {error && (
           <p className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">

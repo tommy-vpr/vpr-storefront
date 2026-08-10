@@ -18,6 +18,7 @@ import { getClient } from "@/lib/wms/session";
 import { getSessionToken } from "@/lib/wms/session";
 import { wmsClient, WmsError } from "@/lib/wms/client";
 import { sendOrderConfirmationEmail } from "@/lib/email";
+import { verifyTurnstile } from "@/lib/turnstile";
 import type { OpaqueData, ShippingAddress } from "@/lib/wms/types";
 
 export interface CheckoutInput {
@@ -26,6 +27,8 @@ export interface CheckoutInput {
   shippingAddress: ShippingAddress;
   billingAddress?: ShippingAddress;
   opaqueData: OpaqueData;
+  /** Cloudflare Turnstile token from the widget on the checkout form. */
+  turnstileToken?: string | null;
   /**
    * Cosmetic only — variantId → display name, taken from the browser cart so
    * the receipt reads "Skwezed Salt Watermelon" instead of a SKU. Never used
@@ -42,6 +45,7 @@ export type CheckoutErrorCode =
   | "declined"
   | "unavailable"
   | "invalid"
+  | "challenge"
   | "unknown";
 
 export async function placeOrderAction(
@@ -49,6 +53,20 @@ export async function placeOrderAction(
 ): Promise<CheckoutResult> {
   if (!input.items?.length) {
     return { ok: false, code: "invalid", message: "Your cart is empty." };
+  }
+
+  // Bot check BEFORE the gateway. Ordering matters: everything past this point
+  // costs a real Authorize.net call, and card-testing is precisely the traffic
+  // this endpoint attracts.
+  const challenge = await verifyTurnstile(input.turnstileToken);
+  if (!challenge.ok) {
+    console.warn(`[checkout] turnstile refused: ${challenge.reason}`);
+    return {
+      ok: false,
+      code: "challenge",
+      message:
+        "We couldn't verify that you're human. Please try again — refresh the page if it keeps happening.",
+    };
   }
 
   // A signed-in customer's token makes the WMS use THEIR email and attach the

@@ -47,6 +47,7 @@ export default function CheckoutPage() {
         acceptJsUrl={acceptJsUrl}
         clientKey={clientKey}
         loginId={loginId}
+        turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
       />
     </div>
   );
