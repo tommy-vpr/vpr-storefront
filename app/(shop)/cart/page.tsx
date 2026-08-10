@@ -164,6 +164,13 @@ export default function CartPage() {
         Your card is authorized at checkout and charged when your order ships.
         Shipping is calculated at fulfillment.
       </p>
+
+      <p className="mt-2 text-xs text-muted-foreground">
+        Already ordered?{" "}
+        <Link href="/orders/lookup" className="underline underline-offset-4">
+          Track your order
+        </Link>
+      </p>
     </div>
   );
 }
