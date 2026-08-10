@@ -237,6 +237,30 @@ export function wmsClient(token?: string | null) {
       });
     },
 
+    /**
+     * Retail self-signup. Returns a session token exactly like login — the WMS
+     * signs the customer straight in, so there is no second round-trip.
+     *
+     * Throws WmsError(409) when an account already exists for this email on
+     * THIS store. The same email can hold an account on each brand.
+     *
+     * Past guest orders are NOT attached to the new account: an account is
+     * created from an email alone, so matching by email would let anyone who
+     * knows an address read that customer's order history.
+     */
+    register(body: {
+      email: string;
+      password: string;
+      name?: string;
+    }): Promise<AuthResponse> {
+      return request("/storefront/auth/register", {
+        ...base,
+        method: "POST",
+        body,
+        cache: "no-store",
+      });
+    },
+
     login(body: { email: string; password: string }): Promise<AuthResponse> {
       return request("/storefront/auth/login", {
         ...base,
