@@ -191,7 +191,11 @@ export function wmsClient(token?: string | null) {
         pageInfo?: PageInfo;
       }>(`/storefront/collections/${slug}?${qs.toString()}`, {
         ...base,
-        next: { revalidate: 30, tags: [`collection:${slug}:products`] },
+        // NOT CACHED. Prices are per-customer on a wholesale store, and a
+        // shared cache would serve one buyer's negotiated price to another —
+        // or a guest. The 30s revalidate that used to be here predates
+        // customer pricing.
+        cache: "no-store",
       });
 
       // Prefer server-supplied pageInfo once the WMS provides it.
@@ -210,7 +214,9 @@ export function wmsClient(token?: string | null) {
     getProduct(variantId: string): Promise<{ product: ProductDetail }> {
       return request(`/storefront/products/${variantId}`, {
         ...base,
-        next: { revalidate: 30 },
+        // NOT CACHED — see getCollectionProducts. Per-customer prices can't
+        // sit behind a response cache keyed only on the URL.
+        cache: "no-store",
       });
     },
 

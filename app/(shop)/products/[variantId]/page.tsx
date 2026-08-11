@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { getClient } from "@/lib/wms/session";
+import { getCatalogClient } from "@/lib/wms/session";
 import { WmsError } from "@/lib/wms/client";
 import { formatPrice } from "@/lib/format";
 import { AddToCartButton } from "@/components/add-to-cart-button";
@@ -18,7 +18,7 @@ export default async function ProductPage({
 
   let product;
   try {
-    const res = await getClient().getProduct(variantId);
+    const res = await (await getCatalogClient()).getProduct(variantId);
     product = res.product;
   } catch (err) {
     if (err instanceof WmsError && err.status === 404) notFound();

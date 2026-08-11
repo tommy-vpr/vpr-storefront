@@ -65,6 +65,22 @@ export async function getAuthedClient() {
   return wmsClient(token);
 }
 
+/**
+ * The client for CATALOGUE reads.
+ *
+ * Sends the customer's token when there is one, and works fine without it.
+ * That matters because prices are per-customer on a wholesale store: a
+ * signed-in buyer must reach the API as themselves or they'll be quoted list
+ * prices, which looks like a working page rather than a bug.
+ *
+ * Distinct from getClient() (deliberately anonymous — store config, guest
+ * order lookup) and getAuthedClient() (throws when signed out).
+ */
+export async function getCatalogClient() {
+  const token = await getSessionToken();
+  return wmsClient(token ?? null);
+}
+
 /** Safe variant — returns null instead of throwing when unauthenticated. */
 export async function tryGetAuthedClient() {
   const token = await getSessionToken();
