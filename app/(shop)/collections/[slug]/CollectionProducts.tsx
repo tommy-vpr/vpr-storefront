@@ -1,6 +1,6 @@
 import { ProductCard } from "@/components/product-card";
 import { DEFAULT_PAGE_SIZE } from "@/lib/wms/client";
-import { getCatalogClient } from "@/lib/wms/session";
+import { getCatalogClient, getClient, isLoggedIn } from "@/lib/wms/session";
 import type { CollectionSort } from "@/lib/wms/types";
 
 import { Pagination } from "./Pagination";
@@ -52,13 +52,21 @@ export async function CollectionProducts({
     filters[key] = value;
   }
 
-  const { products, pageInfo } = await (await getCatalogClient()).getCollectionProducts(slug, {
-    take,
-    skip,
-    sort,
-    search: first(searchParams.q),
-    filters,
-  });
+  const [{ products, pageInfo }, { store }, loggedIn] = await Promise.all([
+    (await getCatalogClient()).getCollectionProducts(slug, {
+      take,
+      skip,
+      sort,
+      search: first(searchParams.q),
+      filters,
+    }),
+    getClient().getStore(),
+    isLoggedIn(),
+  ]);
+
+  // Wholesale prices are per-account, so there is no meaningful price to show
+  // a stranger — list is a number no customer actually pays.
+  const pricesHidden = store.mode === "WHOLESALE" && !loggedIn;
 
   if (products.length === 0) {
     return (
@@ -74,7 +82,11 @@ export async function CollectionProducts({
     <>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {products.map((p) => (
-          <ProductCard key={p.variantId} product={p} />
+          <ProductCard
+            key={p.variantId}
+            product={p}
+            pricesHidden={pricesHidden}
+          />
         ))}
       </div>
 

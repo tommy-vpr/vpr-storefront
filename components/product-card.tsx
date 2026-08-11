@@ -2,7 +2,22 @@ import Link from "next/link";
 import { formatPrice } from "@/lib/format";
 import type { ProductListItem } from "@/lib/wms/types";
 
-export function ProductCard({ product }: { product: ProductListItem }) {
+/**
+ * `pricesHidden` is set on a WHOLESALE store for a signed-out visitor.
+ *
+ * Products stay browsable — that's how a prospective buyer decides to ask for
+ * an account, and it's what search engines see. Only the price is withheld,
+ * because on a wholesale site there is no such thing as "the" price: what a
+ * customer pays depends on their account, so showing list would be showing a
+ * number nobody actually pays.
+ */
+export function ProductCard({
+  product,
+  pricesHidden = false,
+}: {
+  product: ProductListItem;
+  pricesHidden?: boolean;
+}) {
   return (
     <Link
       href={`/products/${product.defaultVariantId ?? product.variantId}`}
@@ -43,7 +58,11 @@ export function ProductCard({ product }: { product: ProductListItem }) {
           {/* Retail is guest-first: price is public. A variant with no
               sellingPrice is not orderable at all, so it reads as unavailable
               rather than as something to sign in for. */}
-          {product.price !== null ? (
+          {pricesHidden ? (
+            <p className="text-xs font-medium text-muted-foreground">
+              Sign in to see price
+            </p>
+          ) : product.price !== null ? (
             <p className="text-sm font-medium">
               {formatPrice(product.price)}
               {/* Only rendered when the customer's price is actually lower —

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { getCatalogClient } from "@/lib/wms/session";
+import { getCatalogClient, getClient, isLoggedIn } from "@/lib/wms/session";
 import { WmsError } from "@/lib/wms/client";
 import { formatPrice } from "@/lib/format";
 
@@ -32,11 +32,21 @@ export default async function ProductPage({
     throw err;
   }
 
-  // Retail is guest-first. The only thing that can stop a purchase is the
-  // product itself: a variant with no sellingPrice is not orderable, and the
-  // WMS rejects it server-side too (POST /storefront/orders filters on
+  const [{ store }, loggedIn] = await Promise.all([
+    getClient().getStore(),
+    isLoggedIn(),
+  ]);
+
+  // Wholesale is account-priced, so a signed-out visitor has no price and
+  // therefore nothing to add to a cart — an unpriced cart would check out at
+  // list, which is worse than refusing. Products stay browsable either way.
+  const pricesHidden = store.mode === "WHOLESALE" && !loggedIn;
+
+  // Retail is guest-first. The only thing that can stop a purchase there is
+  // the product itself: a variant with no sellingPrice is not orderable, and
+  // the WMS rejects it server-side too (POST /storefront/orders filters on
   // sellingPrice NOT NULL), so this is a display of that rule, not the rule.
-  const canAddToCart = product.price !== null;
+  const canAddToCart = !pricesHidden && product.price !== null;
 
   return (
     <>
@@ -82,7 +92,15 @@ export default async function ProductPage({
           />
 
           <div className="mt-6">
-            {product.price !== null ? (
+            {pricesHidden ? (
+              <Button asChild variant="outline">
+                <Link
+                  href={`/login?redirect=/products/${product.variantId}`}
+                >
+                  Sign in to see price
+                </Link>
+              </Button>
+            ) : product.price !== null ? (
               <div className="flex items-baseline gap-2">
                 <p className="text-2xl font-medium">
                   {formatPrice(product.price)}
@@ -128,6 +146,12 @@ export default async function ProductPage({
                 price: product.price!,
               }}
             />
+          ) : pricesHidden ? (
+            <Button asChild size="lg" className="w-full">
+              <Link href={`/login?redirect=/products/${product.variantId}`}>
+                Sign in to purchase
+              </Link>
+            </Button>
           ) : (
             <p className="text-sm text-muted-foreground">
               This product isn&apos;t available for purchase right now.
