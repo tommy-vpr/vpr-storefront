@@ -44,7 +44,18 @@ export function ProductCard({ product }: { product: ProductListItem }) {
               sellingPrice is not orderable at all, so it reads as unavailable
               rather than as something to sign in for. */}
           {product.price !== null ? (
-            <p className="text-sm font-medium">{formatPrice(product.price)}</p>
+            <p className="text-sm font-medium">
+              {formatPrice(product.price)}
+              {/* Only rendered when the customer's price is actually lower —
+                  the API sends listPrice as null otherwise, so there's no
+                  judgement call here about whether a strike-through means
+                  anything. */}
+              {product.listPrice != null && (
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground line-through">
+                  {formatPrice(product.listPrice)}
+                </span>
+              )}
+            </p>
           ) : (
             <p className="text-xs text-muted-foreground">Unavailable</p>
           )}

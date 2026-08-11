@@ -76,9 +76,16 @@ export default async function ProductPage({
 
           <div className="mt-6">
             {product.price !== null ? (
-              <p className="text-2xl font-medium">
-                {formatPrice(product.price)}
-              </p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-medium">
+                  {formatPrice(product.price)}
+                </p>
+                {product.listPrice != null && (
+                  <span className="text-base text-muted-foreground line-through">
+                    {formatPrice(product.listPrice)}
+                  </span>
+                )}
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground">
                 Not available for purchase
