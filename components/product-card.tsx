@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatPrice } from "@/lib/format";
 import type { ProductListItem } from "@/lib/wms/types";
+import { AlertCircle } from "lucide-react";
 
 /**
  * `pricesHidden` is set on a WHOLESALE store for a signed-out visitor.
@@ -59,8 +60,8 @@ export function ProductCard({
               sellingPrice is not orderable at all, so it reads as unavailable
               rather than as something to sign in for. */}
           {pricesHidden ? (
-            <p className="text-xs font-medium text-muted-foreground">
-              Sign in to see price
+            <p className="text-xs font-medium text-orange-600 flex gap-1 items-center">
+              <AlertCircle className="w-3 h-3" /> Sign in to see price
             </p>
           ) : product.price !== null ? (
             <p className="text-sm font-medium">
