@@ -6,6 +6,7 @@
 
 import { getClient } from "@/lib/wms/session";
 import { Card } from "@/components/ui/card";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -31,15 +32,14 @@ export default async function AuthLayout({
       <div className="mb-8 flex flex-col items-center">
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={logoUrl}
-            alt={storeName}
-            className="h-10 w-auto"
-          />
+          <Link
+            href={"/"}
+            className="cursor-pointer hover:opacity-80 transition"
+          >
+            <img src={logoUrl} alt={storeName} className="h-10 w-auto" />
+          </Link>
         ) : (
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {storeName}
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{storeName}</h1>
         )}
       </div>
 

@@ -14,6 +14,14 @@ export interface StoreInfo {
   supportEmail: string | null;
   logoUrl: string | null;
   primaryColor: string | null;
+  /**
+   * RETAIL — self-signup, guest checkout, public prices.
+   * WHOLESALE — invite-only; accounts come from a sales rep.
+   *
+   * A UI hint only. The WMS enforces the same rule on every endpoint, because
+   * this value arrives in a response anyone posting directly can ignore.
+   */
+  mode: "RETAIL" | "WHOLESALE";
 }
 
 export interface Collection {
@@ -72,7 +80,18 @@ export interface ProductVariantOption {
   /** Picker button text with the product-name prefix stripped, e.g. "25mg". */
   label: string;
   imageUrl: string | null;
+  /**
+   * What THIS customer pays. For a guest or a retail customer that's the
+   * catalogue price; for a signed-in wholesale customer it's resolved from
+   * their account's pricing tags.
+   */
   price: number | null;
+  /**
+   * The catalogue price, present ONLY when this customer's price is lower —
+   * i.e. when a strike-through is meaningful. Null otherwise, so the client
+   * never has to decide whether showing it makes sense.
+   */
+  listPrice?: number | null;
 }
 
 export interface ProductListItem {
@@ -86,6 +105,8 @@ export interface ProductListItem {
   imageUrl: string | null;
   /** Default variant's price. Not a range — see storefront.routes.ts. */
   price: number | null;
+  /** Catalogue price, present only when this customer pays less. */
+  listPrice?: number | null;
   variantCount: number;
   variants: ProductVariantOption[];
   brand: string | null;
@@ -107,6 +128,8 @@ export interface ProductDetail {
   description: string | null;
   imageUrl: string | null;
   price: number | null;
+  /** Catalogue price, present only when this customer pays less. */
+  listPrice?: number | null;
   brand: string | null;
   category: string | null;
   tags: string[];

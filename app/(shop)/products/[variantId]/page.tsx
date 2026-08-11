@@ -3,9 +3,16 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { getClient } from "@/lib/wms/session";
+import { getCatalogClient, getClient, isLoggedIn } from "@/lib/wms/session";
 import { WmsError } from "@/lib/wms/client";
 import { formatPrice } from "@/lib/format";
+
+/**
+ * Per-customer prices — this page must be rendered per request, not built
+ * ahead of one. A statically rendered version has no cookie, so it bakes in
+ * list prices and serves them to every signed-in customer too.
+ */
+export const dynamic = "force-dynamic";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { VariantPicker } from "@/components/variant-picker";
 
@@ -18,18 +25,28 @@ export default async function ProductPage({
 
   let product;
   try {
-    const res = await getClient().getProduct(variantId);
+    const res = await (await getCatalogClient()).getProduct(variantId);
     product = res.product;
   } catch (err) {
     if (err instanceof WmsError && err.status === 404) notFound();
     throw err;
   }
 
-  // Retail is guest-first. The only thing that can stop a purchase is the
-  // product itself: a variant with no sellingPrice is not orderable, and the
-  // WMS rejects it server-side too (POST /storefront/orders filters on
+  const [{ store }, loggedIn] = await Promise.all([
+    getClient().getStore(),
+    isLoggedIn(),
+  ]);
+
+  // Wholesale is account-priced, so a signed-out visitor has no price and
+  // therefore nothing to add to a cart — an unpriced cart would check out at
+  // list, which is worse than refusing. Products stay browsable either way.
+  const pricesHidden = store.mode === "WHOLESALE" && !loggedIn;
+
+  // Retail is guest-first. The only thing that can stop a purchase there is
+  // the product itself: a variant with no sellingPrice is not orderable, and
+  // the WMS rejects it server-side too (POST /storefront/orders filters on
   // sellingPrice NOT NULL), so this is a display of that rule, not the rule.
-  const canAddToCart = product.price !== null;
+  const canAddToCart = !pricesHidden && product.price !== null;
 
   return (
     <>
@@ -75,10 +92,25 @@ export default async function ProductPage({
           />
 
           <div className="mt-6">
-            {product.price !== null ? (
-              <p className="text-2xl font-medium">
-                {formatPrice(product.price)}
-              </p>
+            {pricesHidden ? (
+              <Button asChild variant="outline">
+                <Link
+                  href={`/login?redirect=/products/${product.variantId}`}
+                >
+                  Sign in to see price
+                </Link>
+              </Button>
+            ) : product.price !== null ? (
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-medium">
+                  {formatPrice(product.price)}
+                </p>
+                {product.listPrice != null && (
+                  <span className="text-base text-muted-foreground line-through">
+                    {formatPrice(product.listPrice)}
+                  </span>
+                )}
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground">
                 Not available for purchase
@@ -114,6 +146,12 @@ export default async function ProductPage({
                 price: product.price!,
               }}
             />
+          ) : pricesHidden ? (
+            <Button asChild size="lg" className="w-full">
+              <Link href={`/login?redirect=/products/${product.variantId}`}>
+                Sign in to purchase
+              </Link>
+            </Button>
           ) : (
             <p className="text-sm text-muted-foreground">
               This product isn&apos;t available for purchase right now.

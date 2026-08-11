@@ -1,8 +1,24 @@
 import Link from "next/link";
 import { formatPrice } from "@/lib/format";
 import type { ProductListItem } from "@/lib/wms/types";
+import { AlertCircle } from "lucide-react";
 
-export function ProductCard({ product }: { product: ProductListItem }) {
+/**
+ * `pricesHidden` is set on a WHOLESALE store for a signed-out visitor.
+ *
+ * Products stay browsable — that's how a prospective buyer decides to ask for
+ * an account, and it's what search engines see. Only the price is withheld,
+ * because on a wholesale site there is no such thing as "the" price: what a
+ * customer pays depends on their account, so showing list would be showing a
+ * number nobody actually pays.
+ */
+export function ProductCard({
+  product,
+  pricesHidden = false,
+}: {
+  product: ProductListItem;
+  pricesHidden?: boolean;
+}) {
   return (
     <Link
       href={`/products/${product.defaultVariantId ?? product.variantId}`}
@@ -43,8 +59,23 @@ export function ProductCard({ product }: { product: ProductListItem }) {
           {/* Retail is guest-first: price is public. A variant with no
               sellingPrice is not orderable at all, so it reads as unavailable
               rather than as something to sign in for. */}
-          {product.price !== null ? (
-            <p className="text-sm font-medium">{formatPrice(product.price)}</p>
+          {pricesHidden ? (
+            <p className="text-xs font-medium text-orange-600 flex gap-1 items-center">
+              <AlertCircle className="w-3 h-3" /> Sign in to see price
+            </p>
+          ) : product.price !== null ? (
+            <p className="text-sm font-medium">
+              {formatPrice(product.price)}
+              {/* Only rendered when the customer's price is actually lower —
+                  the API sends listPrice as null otherwise, so there's no
+                  judgement call here about whether a strike-through means
+                  anything. */}
+              {product.listPrice != null && (
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground line-through">
+                  {formatPrice(product.listPrice)}
+                </span>
+              )}
+            </p>
           ) : (
             <p className="text-xs text-muted-foreground">Unavailable</p>
           )}

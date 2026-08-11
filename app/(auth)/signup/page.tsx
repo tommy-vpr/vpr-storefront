@@ -6,7 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { tryGetAuthedClient } from "@/lib/wms/session";
+import { notFound } from "next/navigation";
+import { getClient, tryGetAuthedClient } from "@/lib/wms/session";
 import { SignupForm } from "./form";
 
 /**
@@ -30,6 +31,13 @@ export default async function SignupPage({
   if (authed) {
     redirect(safeRedirect(redirectTo) ?? "/");
   }
+
+  // A wholesale store has no self-signup — accounts come from a sales rep's
+  // invite. 404 rather than a friendly "not available" page: the route should
+  // simply not exist on this brand, and the WMS 403s the underlying endpoint
+  // regardless of what renders here.
+  const { store } = await getClient().getStore();
+  if (store.mode === "WHOLESALE") notFound();
 
   const dest = safeRedirect(redirectTo);
 
