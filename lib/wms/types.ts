@@ -14,6 +14,14 @@ export interface StoreInfo {
   supportEmail: string | null;
   logoUrl: string | null;
   primaryColor: string | null;
+  /**
+   * RETAIL — self-signup, guest checkout, public prices.
+   * WHOLESALE — invite-only; accounts come from a sales rep.
+   *
+   * A UI hint only. The WMS enforces the same rule on every endpoint, because
+   * this value arrives in a response anyone posting directly can ignore.
+   */
+  mode: "RETAIL" | "WHOLESALE";
 }
 
 export interface Collection {
