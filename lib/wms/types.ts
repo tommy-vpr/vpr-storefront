@@ -105,6 +105,8 @@ export interface ProductListItem {
   imageUrl: string | null;
   /** Default variant's price. Not a range — see storefront.routes.ts. */
   price: number | null;
+  /** Catalogue price, present only when this customer pays less. */
+  listPrice?: number | null;
   variantCount: number;
   variants: ProductVariantOption[];
   brand: string | null;
