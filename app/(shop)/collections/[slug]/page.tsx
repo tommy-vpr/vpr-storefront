@@ -16,6 +16,15 @@ import { ProductsSpinner } from "./ProductsSpinner";
  * not-found UI *inside* an already-committed page shell rather than replacing
  * it. Keeping it outside means an unknown slug 404s cleanly.
  */
+
+/**
+ * Prices are per-customer, so this page cannot be rendered ahead of a request.
+ * Without this, Next may build it statically — no cookie, no customer, list
+ * prices baked in and served to everyone. That is exactly what happened: the
+ * product page carried force-dynamic and priced correctly while this listing
+ * showed catalogue prices to a signed-in wholesale customer.
+ */
+export const dynamic = "force-dynamic";
 export default async function CollectionPage({
   params,
   searchParams,

@@ -6,6 +6,13 @@ import { Separator } from "@/components/ui/separator";
 import { getCatalogClient } from "@/lib/wms/session";
 import { WmsError } from "@/lib/wms/client";
 import { formatPrice } from "@/lib/format";
+
+/**
+ * Per-customer prices — this page must be rendered per request, not built
+ * ahead of one. A statically rendered version has no cookie, so it bakes in
+ * list prices and serves them to every signed-in customer too.
+ */
+export const dynamic = "force-dynamic";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { VariantPicker } from "@/components/variant-picker";
 

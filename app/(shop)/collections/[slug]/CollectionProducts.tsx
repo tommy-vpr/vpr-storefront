@@ -24,9 +24,13 @@ function first(v: string | string[] | undefined): string | undefined {
 /**
  * The streamed section. Owns product fetching and the grid.
  *
- * It no longer reads the session: retail is guest-first, so pricing is public
- * and nothing here depends on who is asking. It stays behind Suspense because
- * the product fetch is the slow part of the page, not because it is dynamic.
+ * It DOES depend on who is asking: getCatalogClient sends the customer's token
+ * when there is one, and a wholesale customer's prices are resolved from their
+ * account. (An earlier version of this comment said the opposite — true when
+ * retail was the only mode, false since wholesale pricing landed.)
+ *
+ * The page sets force-dynamic for the same reason. It stays behind Suspense
+ * because the product fetch is the slow part, not because it is dynamic.
  */
 export async function CollectionProducts({
   slug,
