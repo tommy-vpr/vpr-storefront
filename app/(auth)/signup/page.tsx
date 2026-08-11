@@ -7,54 +7,51 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { tryGetAuthedClient } from "@/lib/wms/session";
-import { LoginForm } from "./form";
+import { SignupForm } from "./form";
+
+/**
+ * Retail self-signup.
+ *
+ * An account is optional — checkout works fine as a guest — so this page is
+ * careful not to imply otherwise. What an account buys is order history in one
+ * place; a guest still gets a status link on every order.
+ */
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage({
+export default async function SignupPage({
   searchParams,
 }: {
   searchParams: Promise<{ redirect?: string }>;
 }) {
   const { redirect: redirectTo } = await searchParams;
 
-  // If already authed, bounce — honoring the redirect if it's safe
   const authed = await tryGetAuthedClient();
   if (authed) {
     redirect(safeRedirect(redirectTo) ?? "/");
   }
 
+  const dest = safeRedirect(redirectTo);
+
   return (
     <>
       <CardHeader>
-        <CardTitle>Sign in</CardTitle>
+        <CardTitle>Create an account</CardTitle>
         <CardDescription>
-          Enter your email and password to access your account.
+          Keep your orders in one place. You can also check out as a guest —
+          every order comes with its own tracking link.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <LoginForm redirectTo={safeRedirect(redirectTo)} />
+        <SignupForm redirectTo={dest} />
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
           <Link
-            href="/forgot-password"
+            href={dest ? `/login?redirect=${encodeURIComponent(dest)}` : "/login"}
             className="font-medium text-foreground underline-offset-4 hover:underline"
           >
-            Forgot password?
-          </Link>
-        </p>
-
-        <p className="mt-2 text-center text-sm text-muted-foreground">
-          New here?{" "}
-          <Link
-            href={
-              safeRedirect(redirectTo)
-                ? `/signup?redirect=${encodeURIComponent(safeRedirect(redirectTo)!)}`
-                : "/signup"
-            }
-            className="font-medium text-foreground underline-offset-4 hover:underline"
-          >
-            Create an account
+            Sign in
           </Link>
         </p>
       </CardContent>
@@ -62,7 +59,7 @@ export default async function LoginPage({
   );
 }
 
-/** Only accept same-site redirects — prevents open-redirect abuse via ?redirect=https://evil.com */
+/** Only accept same-site redirects — prevents open-redirect abuse. */
 function safeRedirect(value: string | undefined): string | null {
   if (!value) return null;
   if (!value.startsWith("/") || value.startsWith("//")) return null;

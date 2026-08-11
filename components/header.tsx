@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -124,14 +125,16 @@ export function Header({ store, customer, collections }: HeaderProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium">{displayName}</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {customer.email}
-                    </span>
-                  </div>
-                </DropdownMenuLabel>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{displayName}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {customer.email}
+                      </span>
+                    </div>
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/account">
@@ -140,14 +143,14 @@ export function Header({ store, customer, collections }: HeaderProps) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/orders">
+                  <Link href="/account/orders">
                     <Package className="mr-2 h-4 w-4" />
                     Orders
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <form action={logoutAction}>
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem asChild nativeButton>
                     <button type="submit" className="w-full cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       Log out

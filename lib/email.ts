@@ -158,6 +158,87 @@ export async function sendOrderCancelledEmail(
   });
 }
 
+/**
+ * Order confirmation — the receipt.
+ *
+ * Unlike the two above, this is NOT driven by a WMS webhook: it is sent by the
+ * checkout server action the moment an order is authorized, because the
+ * customer expects a receipt within seconds and the WMS has no "order placed"
+ * event pointed at the storefront.
+ *
+ * That means no eventId to dedupe on, so the key is the order id — stable, and
+ * an order can only be placed once. Payload must stay constant for the same
+ * key (see the note at the top of this file), so nothing here may include a
+ * timestamp or anything else that varies between calls.
+ *
+ * MONEY COMES FROM THE WMS. Line names are cosmetic and may come from the
+ * browser's cart; quantities and amounts are the server-computed ones from the
+ * order response. A tampered cart can therefore make a receipt say the wrong
+ * product NAME, and never the wrong price.
+ */
+export async function sendOrderConfirmationEmail(args: {
+  orderId: string;
+  orderNumber: string;
+  to: string;
+  totalAmount: number;
+  statusUrl: string;
+  items: Array<{ name: string; quantity: number; totalPrice: number }>;
+}): Promise<void> {
+  const orderNumber = escapeHtml(args.orderNumber);
+
+  const rows = args.items
+    .map(
+      (i) => `
+      <tr>
+        <td style="padding:8px 0;color:#111;">${escapeHtml(i.name)}</td>
+        <td style="padding:8px 0;color:#555;text-align:center;">${i.quantity}</td>
+        <td style="padding:8px 0;color:#111;text-align:right;">$${i.totalPrice.toFixed(2)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  const html = `
+    <div style="font-family:system-ui,-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111;">
+      <h1 style="font-size:22px;margin:0 0 8px;">Thanks for your order</h1>
+      <p style="color:#555;margin:0 0 24px;">Order ${orderNumber}</p>
+
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        ${rows}
+        <tr>
+          <td colspan="3" style="border-top:1px solid #eee;padding-top:12px;"></td>
+        </tr>
+        <tr>
+          <td style="font-weight:600;">Total</td>
+          <td></td>
+          <td style="font-weight:600;text-align:right;">$${args.totalAmount.toFixed(2)}</td>
+        </tr>
+      </table>
+
+      <p style="margin:24px 0;">
+        <a href="${escapeHtml(args.statusUrl)}"
+           style="background:#111;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;display:inline-block;">
+          View your order
+        </a>
+      </p>
+
+      <p style="color:#555;font-size:14px;margin:16px 0;">
+        Your card is authorized now and charged when your order ships. Shipping
+        is calculated at fulfillment, and tracking appears on the page above as
+        soon as it's on its way.
+      </p>
+
+      <hr style="border:none;border-top:1px solid #eee;margin:32px 0;" />
+      <p style="color:#888;font-size:13px;margin:0;">${escapeHtml(STORE_NAME)}</p>
+    </div>`;
+
+  await send({
+    to: args.to,
+    subject: `Your ${STORE_NAME} order ${args.orderNumber}`,
+    html,
+    idempotencyKey: `order-confirmation:${args.orderId}`,
+  });
+}
+
 async function send(opts: {
   to: string;
   subject: string;

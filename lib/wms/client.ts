@@ -18,8 +18,11 @@ import type {
   PageInfo,
   CustomerProfile,
   InviteContext,
+  OpaqueData,
   OrderDetail,
+  OrderStatus,
   OrderSummary,
+  PlacedOrder,
   ProductDetail,
   ProductListItem,
   ShippingAddress,
@@ -234,6 +237,30 @@ export function wmsClient(token?: string | null) {
       });
     },
 
+    /**
+     * Retail self-signup. Returns a session token exactly like login — the WMS
+     * signs the customer straight in, so there is no second round-trip.
+     *
+     * Throws WmsError(409) when an account already exists for this email on
+     * THIS store. The same email can hold an account on each brand.
+     *
+     * Past guest orders are NOT attached to the new account: an account is
+     * created from an email alone, so matching by email would let anyone who
+     * knows an address read that customer's order history.
+     */
+    register(body: {
+      email: string;
+      password: string;
+      name?: string;
+    }): Promise<AuthResponse> {
+      return request("/storefront/auth/register", {
+        ...base,
+        method: "POST",
+        body,
+        cache: "no-store",
+      });
+    },
+
     login(body: { email: string; password: string }): Promise<AuthResponse> {
       return request("/storefront/auth/login", {
         ...base,
@@ -302,12 +329,66 @@ export function wmsClient(token?: string | null) {
 
     // ─── Orders ─────────────────────────────────────────────────────────
 
+    /**
+     * Place an order. Guest or logged-in.
+     *
+     * `email` is required for guests and IGNORED when a customer token is
+     * present — the WMS takes the token's email as authoritative, so there is
+     * no way to place an order under someone else's address while signed in.
+     *
+     * `payment` is typed optional to mirror the API, but retail checkout
+     * ALWAYS sends it: the route deletes the order and returns 402 "Payment is
+     * required" without it. There is no invoice-me path on this endpoint.
+     *
+     * Omitting `billingAddress` makes the WMS copy the shipping address. Send
+     * it anyway when the customer gives one — AVS match improves the
+     * authorization rate.
+     *
+     * On decline the WMS deletes the order and throws WmsError(402); nothing
+     * is left behind to retry against, so a retry re-posts the whole order
+     * with a NEW nonce.
+     */
     placeOrder(body: {
       items: Array<{ variantId: string; quantity: number }>;
       shippingAddress: ShippingAddress;
       billingAddress?: ShippingAddress;
-    }): Promise<{ order: OrderDetail }> {
+      email?: string;
+      payment?: { opaqueData: OpaqueData };
+    }): Promise<{ order: PlacedOrder }> {
       return request("/storefront/orders", {
+        ...base,
+        method: "POST",
+        body,
+        cache: "no-store",
+      });
+    },
+
+    /**
+     * Guest order status by the token emailed to them. The primary lookup —
+     * no enumeration surface, so it carries a far looser rate limit than the
+     * orderNumber+email fallback.
+     *
+     * Returns status and tracking only: no line items, addresses, or pricing
+     * beyond the total. Anyone with the link can see it.
+     */
+    getOrderByToken(token: string): Promise<{ order: OrderStatus }> {
+      return request(`/storefront/orders/token/${token}`, {
+        ...base,
+        cache: "no-store",
+      });
+    },
+
+    /**
+     * Fallback lookup for a customer who lost the link. Hardened server-side
+     * (5/min per IP, constant-time email compare, identical 404 whether the
+     * order or the email is wrong, minimum response time) — so treat every
+     * failure as "not found" and never surface which half was wrong.
+     */
+    lookupOrder(body: {
+      orderNumber: string;
+      email: string;
+    }): Promise<{ order: OrderStatus }> {
+      return request("/storefront/orders/lookup", {
         ...base,
         method: "POST",
         body,
