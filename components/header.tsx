@@ -49,7 +49,10 @@ interface HeaderProps {
 export function Header({ store, customer, collections }: HeaderProps) {
   const isAuthed = customer !== null;
   const displayName = customer?.name ?? customer?.email ?? null;
-  const brandGroups = groupByBrand(collections);
+  const NAV_EXCLUDED_SLUGS = new Set(["skwezed-ijoy", "skwezed-merch"]);
+  const brandGroups = groupByBrand(
+    collections.filter((c) => !NAV_EXCLUDED_SLUGS.has(c.slug)),
+  );
 
   console.log(brandGroups);
 
@@ -60,7 +63,7 @@ export function Header({ store, customer, collections }: HeaderProps) {
           <Image
             src={"/images/logo-main.png"}
             alt="vpr collection"
-            width={140}
+            width={150}
             height={100}
           />
         </Link>
