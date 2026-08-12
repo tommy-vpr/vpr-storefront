@@ -92,6 +92,7 @@ export interface ProductVariantOption {
    * never has to decide whether showing it makes sense.
    */
   listPrice?: number | null;
+  stock?: StockBand | null;
 }
 
 export interface ProductListItem {
@@ -166,6 +167,31 @@ export interface CustomerProfile extends Customer {
   countryCode: string | null;
   emailVerified: boolean;
   createdAt: string;
+}
+
+/**
+ * A single orderable line in the quick-order form. Flat and variant-level —
+ * see GET /storefront/quick-order for why that differs from the catalogue.
+ */
+/**
+ * Stock as a band rather than a count — enough for a buyer to judge whether a
+ * large quantity is realistic, without exposing our inventory position.
+ * OUT still means orderable: this business backorders deliberately.
+ */
+export type StockBand = "IN" | "LOW" | "OUT";
+
+export interface QuickOrderVariant {
+  variantId: string;
+  productId: string;
+  sku: string;
+  productName: string;
+  /** Strength or option, with the product name stripped. */
+  label: string;
+  imageUrl: string | null;
+  price: number | null;
+  /** Catalogue price, present only when this customer pays less. */
+  listPrice: number | null;
+  stock: StockBand | null;
 }
 
 export interface AuthResponse {

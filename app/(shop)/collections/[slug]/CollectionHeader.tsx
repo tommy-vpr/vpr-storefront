@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { WmsError } from "@/lib/wms/client";
 import { getClient } from "@/lib/wms/session";
 
@@ -30,12 +28,16 @@ export async function CollectionHeader({ slug }: { slug: string }) {
 
   return (
     <div className="mb-8">
-      <Button asChild variant="ghost" size="sm" className="-ml-3 mb-4">
-        <Link href="/" className="flex items-center gap-1">
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          All collections
-        </Link>
-      </Button>
+      {/* Was a "All collections" button pointing at "/" — the homepage, not
+          the collections index. */}
+      <Breadcrumbs
+        className="mb-4"
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Collections", href: "/all-collections" },
+          { label: collection.name },
+        ]}
+      />
 
       <h1 className="text-3xl font-semibold tracking-tight">
         {collection.name}

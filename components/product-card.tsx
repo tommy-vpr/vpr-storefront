@@ -15,13 +15,22 @@ import { AlertCircle } from "lucide-react";
 export function ProductCard({
   product,
   pricesHidden = false,
+  fromCollection,
 }: {
   product: ProductListItem;
   pricesHidden?: boolean;
+  /**
+   * Slug of the collection this card was rendered in. Passed through so the
+   * product page can show a breadcrumb back to it — the product itself has no
+   * idea which collections it belongs to.
+   */
+  fromCollection?: string;
 }) {
   return (
     <Link
-      href={`/products/${product.defaultVariantId ?? product.variantId}`}
+      href={`/products/${product.defaultVariantId ?? product.variantId}${
+        fromCollection ? `?from=${encodeURIComponent(fromCollection)}` : ""
+      }`}
       className="group flex flex-col overflow-hidden rounded-lg border bg-card transition hover:border-foreground/30 hover:shadow-sm"
     >
       <div className="relative aspect-square bg-muted">
@@ -30,7 +39,7 @@ export function ProductCard({
           <img
             src={product.imageUrl}
             alt={product.name}
-            className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+            className="h-full w-full object-contain transition group-hover:scale-[1.02]"
             loading="lazy"
           />
         ) : (

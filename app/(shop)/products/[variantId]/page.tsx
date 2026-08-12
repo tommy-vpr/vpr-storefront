@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { getCatalogClient, getClient, isLoggedIn } from "@/lib/wms/session";
 import { WmsError } from "@/lib/wms/client";
 import { formatPrice } from "@/lib/format";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
 /**
  * Per-customer prices — this page must be rendered per request, not built
@@ -15,13 +15,20 @@ import { formatPrice } from "@/lib/format";
 export const dynamic = "force-dynamic";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { VariantPicker } from "@/components/variant-picker";
+import { QuantityRow, QuantityRowHeader } from "@/components/quantity-row";
+import { CartSummaryBar } from "@/components/cart-summary-bar";
 
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ variantId: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { variantId } = await params;
+  const { from } = await searchParams;
+
+  console.log("FROM:***", from);
 
   let product;
   try {
@@ -32,15 +39,30 @@ export default async function ProductPage({
     throw err;
   }
 
-  const [{ store }, loggedIn] = await Promise.all([
+  const [{ store }, loggedIn, fromCollection] = await Promise.all([
     getClient().getStore(),
     isLoggedIn(),
+    // Resolved rather than trusted: the slug decides a label shown to the
+    // customer, and an unknown one should drop the crumb, not render whatever
+    // was in the URL.
+    from
+      ? getClient()
+          .getCollection(from)
+          .then((d) => ({ name: d.collection.name, slug: from }))
+          .catch(() => null)
+      : Promise.resolve(null),
   ]);
 
   // Wholesale is account-priced, so a signed-out visitor has no price and
   // therefore nothing to add to a cart — an unpriced cart would check out at
   // list, which is worse than refusing. Products stay browsable either way.
   const pricesHidden = store.mode === "WHOLESALE" && !loggedIn;
+
+  // On a wholesale store a signed-in buyer orders ACROSS the strengths, not
+  // one of them — so the picker and single add-to-cart are replaced by a
+  // quantity row per variant. Retail keeps the picker: a retail customer buys
+  // one flavour at one strength, and a table of six would be noise.
+  const bulkVariants = store.mode === "WHOLESALE" && loggedIn;
 
   // Retail is guest-first. The only thing that can stop a purchase there is
   // the product itself: a variant with no sellingPrice is not orderable, and
@@ -49,22 +71,34 @@ export default async function ProductPage({
   const canAddToCart = !pricesHidden && product.price !== null;
 
   return (
-    <>
-      <Button asChild variant="ghost" size="sm" className="-ml-3 mb-6">
-        <Link href="/" className="flex items-center gap-1">
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          Back
-        </Link>
-      </Button>
+    <div className="min-h-[70vh] max-w-7xl mx-auto">
+      {/* The product itself doesn't know which collections it belongs to, so
+          the middle crumb comes from ?from= — set by the collection grid when
+          you click through. Arriving from a search result or a shared link
+          simply gets the shorter trail rather than a guessed one. */}
+      <Breadcrumbs
+        items={[
+          { label: "Home", href: "/" },
+          ...(fromCollection
+            ? [
+                {
+                  label: fromCollection.name,
+                  href: `/collections/${fromCollection.slug}`,
+                },
+              ]
+            : [{ label: "Collections", href: "/all-collections" }]),
+          { label: product.name },
+        ]}
+      />
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12">
-        <div className="aspect-square overflow-hidden rounded-lg border bg-muted">
+        <div className="aspect-square overflow-hidden rounded-lg border bg-muted flex items-center justify-center">
           {product.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={product.imageUrl}
               alt={product.name}
-              className="h-full w-full object-cover"
+              className="w-2/3 object-cover"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
@@ -86,17 +120,17 @@ export default async function ProductPage({
             {product.variantName}
           </p>
 
-          <VariantPicker
-            variants={product.variants}
-            selectedVariantId={product.selectedVariantId ?? product.variantId}
-          />
+          {!bulkVariants && (
+            <VariantPicker
+              variants={product.variants}
+              selectedVariantId={product.selectedVariantId ?? product.variantId}
+            />
+          )}
 
-          <div className="mt-6">
+          <div className={bulkVariants ? "hidden" : "mt-6"}>
             {pricesHidden ? (
               <Button asChild variant="outline">
-                <Link
-                  href={`/login?redirect=/products/${product.variantId}`}
-                >
+                <Link href={`/login?redirect=/products/${product.variantId}`}>
                   Sign in to see price
                 </Link>
               </Button>
@@ -118,23 +152,35 @@ export default async function ProductPage({
             )}
           </div>
 
-          <div className="mt-2 flex items-center gap-2 text-xs">
-            {product.inStock ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2 py-0.5 text-green-700 dark:bg-green-950/40 dark:text-green-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
-                In stock
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-600" />
-                Backorder — ships when restocked
-              </span>
-            )}
-          </div>
-
           <Separator className="my-6" />
 
-          {canAddToCart ? (
+          {bulkVariants ? (
+            /* Every strength, each with its own quantity. Same component the
+               quick-order form uses, so the two can't drift into behaving
+               differently — they're the same interaction at different scopes. */
+            <div className="overflow-hidden rounded-lg border">
+              <QuantityRowHeader productLabel="Option" />
+              <div className="divide-y">
+                {product.variants.map((v) => (
+                  <QuantityRow
+                    key={v.variantId}
+                    showProductName={false}
+                    item={{
+                      variantId: v.variantId,
+                      productId: product.productId,
+                      sku: v.sku,
+                      productName: product.name,
+                      label: v.label,
+                      imageUrl: v.imageUrl ?? product.imageUrl,
+                      price: v.price,
+                      listPrice: v.listPrice ?? null,
+                      stock: v.stock ?? null,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : canAddToCart ? (
             <AddToCartButton
               item={{
                 variantId: product.variantId,
@@ -157,6 +203,10 @@ export default async function ProductPage({
               This product isn&apos;t available for purchase right now.
             </p>
           )}
+
+          {/* Running total across the whole cart, not just this product — a
+              buyer working through several products needs one number. */}
+          {bulkVariants && <CartSummaryBar />}
 
           {product.description && (
             <>
@@ -182,6 +232,6 @@ export default async function ProductPage({
           </dl>
         </div>
       </div>
-    </>
+    </div>
   );
 }

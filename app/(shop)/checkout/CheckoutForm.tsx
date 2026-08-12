@@ -90,7 +90,12 @@ export function CheckoutForm({
   });
   const [billing, setBilling] = useState<ShippingAddress>(EMPTY_ADDRESS);
   const [billingSame, setBillingSame] = useState(true);
-  const [card, setCard] = useState({ number: "", month: "", year: "", cvv: "" });
+  const [card, setCard] = useState({
+    number: "",
+    month: "",
+    year: "",
+    cvv: "",
+  });
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileHandle | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -119,18 +124,18 @@ export function CheckoutForm({
    * Applied when a Places suggestion is chosen. Name and phone are the
    * customer's, not Google's, so they survive untouched.
    */
-  const applyResolved = (
-    set: (updater: (prev: ShippingAddress) => ShippingAddress) => void,
-  ) => (addr: ResolvedAddress) =>
-    set((prev) => ({
-      ...prev,
-      address1: addr.address1,
-      address2: addr.address2 || prev.address2,
-      city: addr.city,
-      state: addr.state,
-      zip: addr.zip,
-      country: addr.country || "US",
-    }));
+  const applyResolved =
+    (set: (updater: (prev: ShippingAddress) => ShippingAddress) => void) =>
+    (addr: ResolvedAddress) =>
+      set((prev) => ({
+        ...prev,
+        address1: addr.address1,
+        address2: addr.address2 || prev.address2,
+        city: addr.city,
+        state: addr.state,
+        zip: addr.zip,
+        country: addr.country || "US",
+      }));
 
   /** Tokenize with Accept.js. Resolves to the nonce, or rejects with a message. */
   const tokenize = () =>
@@ -178,7 +183,13 @@ export function CheckoutForm({
     setError(null);
 
     if (!email.trim()) return setError("Enter an email for your receipt.");
-    if (!shipping.name.trim() || !shipping.address1.trim() || !shipping.city.trim() || !shipping.state.trim() || !shipping.zip.trim()) {
+    if (
+      !shipping.name.trim() ||
+      !shipping.address1.trim() ||
+      !shipping.city.trim() ||
+      !shipping.state.trim() ||
+      !shipping.zip.trim()
+    ) {
       return setError("Complete the shipping address.");
     }
     if (items.length === 0) return setError("Your cart is empty.");
@@ -269,7 +280,12 @@ export function CheckoutForm({
     <div className="grid gap-3">
       <div className="grid gap-1.5">
         <Label htmlFor={`${prefix}-name`}>Full name</Label>
-        <Input id={`${prefix}-name`} value={value.name} onChange={(e) => set("name", e.target.value)} autoComplete="name" />
+        <Input
+          id={`${prefix}-name`}
+          value={value.name}
+          onChange={(e) => set("name", e.target.value)}
+          autoComplete="name"
+        />
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor={`${prefix}-address1`}>Address</Label>
@@ -281,26 +297,54 @@ export function CheckoutForm({
         />
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor={`${prefix}-address2`}>Apartment, suite (optional)</Label>
-        <Input id={`${prefix}-address2`} value={value.address2 ?? ""} onChange={(e) => set("address2", e.target.value)} autoComplete="address-line2" />
+        <Label htmlFor={`${prefix}-address2`}>
+          Apartment, suite (optional)
+        </Label>
+        <Input
+          id={`${prefix}-address2`}
+          value={value.address2 ?? ""}
+          onChange={(e) => set("address2", e.target.value)}
+          autoComplete="address-line2"
+        />
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="grid gap-1.5">
           <Label htmlFor={`${prefix}-city`}>City</Label>
-          <Input id={`${prefix}-city`} value={value.city} onChange={(e) => set("city", e.target.value)} autoComplete="address-level2" />
+          <Input
+            id={`${prefix}-city`}
+            value={value.city}
+            onChange={(e) => set("city", e.target.value)}
+            autoComplete="address-level2"
+          />
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor={`${prefix}-state`}>State</Label>
-          <Input id={`${prefix}-state`} value={value.state} onChange={(e) => set("state", e.target.value)} autoComplete="address-level1" maxLength={2} />
+          <Input
+            id={`${prefix}-state`}
+            value={value.state}
+            onChange={(e) => set("state", e.target.value)}
+            autoComplete="address-level1"
+            maxLength={2}
+          />
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor={`${prefix}-zip`}>ZIP</Label>
-          <Input id={`${prefix}-zip`} value={value.zip} onChange={(e) => set("zip", e.target.value)} autoComplete="postal-code" />
+          <Input
+            id={`${prefix}-zip`}
+            value={value.zip}
+            onChange={(e) => set("zip", e.target.value)}
+            autoComplete="postal-code"
+          />
         </div>
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor={`${prefix}-phone`}>Phone (optional)</Label>
-        <Input id={`${prefix}-phone`} value={value.phone ?? ""} onChange={(e) => set("phone", e.target.value)} autoComplete="tel" />
+        <Input
+          id={`${prefix}-phone`}
+          value={value.phone ?? ""}
+          onChange={(e) => set("phone", e.target.value)}
+          autoComplete="tel"
+        />
       </div>
     </div>
   );
@@ -354,7 +398,12 @@ export function CheckoutForm({
           {!billingSame && (
             <>
               <h2 className="text-lg font-medium">Billing address</h2>
-              {addressFields(billing, setBill, "bill", applyResolved(setBilling))}
+              {addressFields(
+                billing,
+                setBill,
+                "bill",
+                applyResolved(setBilling),
+              )}
             </>
           )}
         </section>
@@ -363,20 +412,47 @@ export function CheckoutForm({
           <h2 className="text-lg font-medium">Payment</h2>
           <div className="grid gap-1.5">
             <Label htmlFor="card-number">Card number</Label>
-            <Input id="card-number" inputMode="numeric" autoComplete="cc-number" value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value })} />
+            <Input
+              id="card-number"
+              inputMode="numeric"
+              autoComplete="cc-number"
+              value={card.number}
+              onChange={(e) => setCard({ ...card, number: e.target.value })}
+            />
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="card-month">MM</Label>
-              <Input id="card-month" inputMode="numeric" autoComplete="cc-exp-month" maxLength={2} value={card.month} onChange={(e) => setCard({ ...card, month: e.target.value })} />
+              <Input
+                id="card-month"
+                inputMode="numeric"
+                autoComplete="cc-exp-month"
+                maxLength={2}
+                value={card.month}
+                onChange={(e) => setCard({ ...card, month: e.target.value })}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="card-year">YYYY</Label>
-              <Input id="card-year" inputMode="numeric" autoComplete="cc-exp-year" maxLength={4} value={card.year} onChange={(e) => setCard({ ...card, year: e.target.value })} />
+              <Input
+                id="card-year"
+                inputMode="numeric"
+                autoComplete="cc-exp-year"
+                maxLength={4}
+                value={card.year}
+                onChange={(e) => setCard({ ...card, year: e.target.value })}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="card-cvv">CVV</Label>
-              <Input id="card-cvv" inputMode="numeric" autoComplete="cc-csc" maxLength={4} value={card.cvv} onChange={(e) => setCard({ ...card, cvv: e.target.value })} />
+              <Input
+                id="card-cvv"
+                inputMode="numeric"
+                autoComplete="cc-csc"
+                maxLength={4}
+                value={card.cvv}
+                onChange={(e) => setCard({ ...card, cvv: e.target.value })}
+              />
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -390,14 +466,19 @@ export function CheckoutForm({
         <h2 className="mb-4 text-lg font-medium">Order summary</h2>
         <div className="space-y-3">
           {items.map((i) => (
-            <div key={i.variantId} className="flex justify-between gap-3 text-sm">
+            <div
+              key={i.variantId}
+              className="flex justify-between gap-3 text-sm"
+            >
               <span className="min-w-0">
                 <span className="line-clamp-1">{i.name}</span>
                 <span className="text-xs text-muted-foreground">
                   {i.variantName} · {i.quantity}
                 </span>
               </span>
-              <span className="shrink-0">{formatPrice(i.price * i.quantity)}</span>
+              <span className="shrink-0">
+                {formatPrice(i.price * i.quantity)}
+              </span>
             </div>
           ))}
         </div>
@@ -440,7 +521,7 @@ export function CheckoutForm({
         )}
 
         <Button
-          className="mt-5 w-full"
+          className="mt-5 w-full hover:bg-primary/90 transition"
           size="lg"
           disabled={!acceptReady || submitting}
           onClick={handleSubmit}

@@ -25,6 +25,7 @@ import type {
   PlacedOrder,
   ProductDetail,
   ProductListItem,
+  QuickOrderVariant,
   ShippingAddress,
   StoreInfo,
 } from "./types";
@@ -216,6 +217,30 @@ export function wmsClient(token?: string | null) {
         ...base,
         // NOT CACHED — see getCollectionProducts. Per-customer prices can't
         // sit behind a response cache keyed only on the URL.
+        cache: "no-store",
+      });
+    },
+
+    /**
+     * Flat variant list for the bulk reorder form.
+     *
+     * Not cached: prices are per-customer, and this is the one screen where a
+     * buyer reads dozens of them at once.
+     */
+    quickOrder(params?: {
+      q?: string;
+      collectionId?: string;
+      skip?: number;
+      take?: number;
+    }): Promise<{ variants: QuickOrderVariant[]; total: number }> {
+      const qs = new URLSearchParams();
+      if (params?.q) qs.set("q", params.q);
+      if (params?.collectionId) qs.set("collectionId", params.collectionId);
+      qs.set("skip", String(params?.skip ?? 0));
+      qs.set("take", String(params?.take ?? 50));
+
+      return request(`/storefront/quick-order?${qs}`, {
+        ...base,
         cache: "no-store",
       });
     },
