@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Minus, Plus, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useCart } from "@/components/cart-provider";
-import { formatPrice } from "@/lib/format";
+import { QuantityRow, QuantityRowHeader } from "@/components/quantity-row";
+import { CartSummaryBar } from "@/components/cart-summary-bar";
 import type { QuickOrderVariant } from "@/lib/wms/types";
 
 /**
@@ -41,13 +41,8 @@ export function QuickOrderTable({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { items, itemCount, subtotal, addItem, updateQuantity, isHydrated } =
-    useCart();
 
   const [query, setQuery] = useState(initialQuery);
-
-  const qtyOf = (variantId: string) =>
-    items.find((i) => i.variantId === variantId)?.quantity ?? 0;
 
   /** Rewrites the URL so filters survive a reload and can be shared. */
   const navigate = (changes: Record<string, string | null>) => {
@@ -60,29 +55,6 @@ export function QuickOrderTable({
     // new, shorter result set shows nothing and looks broken.
     if (!("page" in changes)) next.delete("page");
     router.push(`/quick-order?${next}`);
-  };
-
-  const setQty = (v: QuickOrderVariant, qty: number) => {
-    if (v.price === null) return;
-    const clamped = Math.max(0, Math.min(qty, 99_999));
-
-    if (qtyOf(v.variantId) === 0 && clamped > 0) {
-      addItem(
-        {
-          variantId: v.variantId,
-          productId: v.productId,
-          sku: v.sku,
-          name: v.productName,
-          variantName: v.label,
-          imageUrl: v.imageUrl,
-          price: v.price,
-        },
-        clamped,
-      );
-      return;
-    }
-    // updateQuantity handles removal at 0 — no special case needed here.
-    updateQuantity(v.variantId, clamped);
   };
 
   return (
@@ -146,11 +118,7 @@ export function QuickOrderTable({
       {/* Rows — compact by design: a buyer scans dozens of these, so the row
           is one line with no image and no wrapping where avoidable. */}
       <div className="overflow-hidden rounded-lg border">
-        <div className="grid grid-cols-[1fr_auto_auto] gap-3 border-b bg-muted/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-          <span>Product</span>
-          <span className="w-24 text-right">Price</span>
-          <span className="w-[136px] text-center">Qty</span>
-        </div>
+        <QuantityRowHeader />
 
         {variants.length === 0 ? (
           <p className="px-3 py-10 text-center text-sm text-muted-foreground">
@@ -158,86 +126,9 @@ export function QuickOrderTable({
           </p>
         ) : (
           <div className="divide-y">
-            {variants.map((v) => {
-              const qty = qtyOf(v.variantId);
-              const unavailable = v.price === null;
-              return (
-                <div
-                  key={v.variantId}
-                  className={`grid grid-cols-[1fr_auto_auto] items-center gap-3 px-3 py-2 ${
-                    qty > 0 ? "bg-primary/[0.03]" : ""
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm">
-                      {v.productName}
-                      {v.label && (
-                        <span className="text-muted-foreground">
-                          {" "}
-                          · {v.label}
-                        </span>
-                      )}
-                    </p>
-                    <p className="font-mono text-[11px] text-muted-foreground">
-                      {v.sku}
-                    </p>
-                  </div>
-
-                  <div className="w-24 text-right">
-                    {unavailable ? (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    ) : (
-                      <>
-                        <span className="text-sm font-medium tabular-nums">
-                          {formatPrice(v.price!)}
-                        </span>
-                        {v.listPrice != null && (
-                          <span className="ml-1 text-[11px] text-muted-foreground line-through">
-                            {formatPrice(v.listPrice)}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  <div className="flex w-[136px] items-center justify-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-7 w-7"
-                      disabled={unavailable || !isHydrated || qty === 0}
-                      onClick={() => setQty(v, qty - 1)}
-                      aria-label="Decrease"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-
-                    <Input
-                      value={isHydrated ? (qty === 0 ? "" : qty) : ""}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/[^\d]/g, "");
-                        setQty(v, raw === "" ? 0 : parseInt(raw, 10));
-                      }}
-                      disabled={unavailable || !isHydrated}
-                      inputMode="numeric"
-                      placeholder="0"
-                      className="h-7 w-14 px-1 text-center text-sm tabular-nums"
-                    />
-
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-7 w-7"
-                      disabled={unavailable || !isHydrated}
-                      onClick={() => setQty(v, qty + 1)}
-                      aria-label="Increase"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+            {variants.map((v) => (
+              <QuantityRow key={v.variantId} item={v} />
+            ))}
           </div>
         )}
       </div>
@@ -267,32 +158,7 @@ export function QuickOrderTable({
         </div>
       )}
 
-      {/* Sticky summary — the whole cart, not this page. Someone who has
-          entered quantities across four pages needs one number, and it must
-          not require scrolling to find. */}
-      {isHydrated && itemCount > 0 && (
-        <div className="sticky bottom-0 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-lg sm:border">
-          <div className="flex items-center justify-between gap-4">
-            <div className="text-sm">
-              <span className="font-medium">
-                {items.length} {items.length === 1 ? "SKU" : "SKUs"}
-              </span>
-              <span className="text-muted-foreground">
-                {" "}
-                · {itemCount} units
-              </span>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-lg font-semibold tabular-nums">
-                {formatPrice(subtotal)}
-              </span>
-              <Button asChild size="sm">
-                <Link href="/cart">Review order</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CartSummaryBar />
     </div>
   );
 }

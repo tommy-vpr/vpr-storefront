@@ -15,6 +15,8 @@ import { formatPrice } from "@/lib/format";
 export const dynamic = "force-dynamic";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { VariantPicker } from "@/components/variant-picker";
+import { QuantityRow, QuantityRowHeader } from "@/components/quantity-row";
+import { CartSummaryBar } from "@/components/cart-summary-bar";
 
 export default async function ProductPage({
   params,
@@ -41,6 +43,12 @@ export default async function ProductPage({
   // therefore nothing to add to a cart — an unpriced cart would check out at
   // list, which is worse than refusing. Products stay browsable either way.
   const pricesHidden = store.mode === "WHOLESALE" && !loggedIn;
+
+  // On a wholesale store a signed-in buyer orders ACROSS the strengths, not
+  // one of them — so the picker and single add-to-cart are replaced by a
+  // quantity row per variant. Retail keeps the picker: a retail customer buys
+  // one flavour at one strength, and a table of six would be noise.
+  const bulkVariants = store.mode === "WHOLESALE" && loggedIn;
 
   // Retail is guest-first. The only thing that can stop a purchase there is
   // the product itself: a variant with no sellingPrice is not orderable, and
@@ -86,12 +94,14 @@ export default async function ProductPage({
             {product.variantName}
           </p>
 
-          <VariantPicker
-            variants={product.variants}
-            selectedVariantId={product.selectedVariantId ?? product.variantId}
-          />
+          {!bulkVariants && (
+            <VariantPicker
+              variants={product.variants}
+              selectedVariantId={product.selectedVariantId ?? product.variantId}
+            />
+          )}
 
-          <div className="mt-6">
+          <div className={bulkVariants ? "hidden" : "mt-6"}>
             {pricesHidden ? (
               <Button asChild variant="outline">
                 <Link
@@ -134,7 +144,32 @@ export default async function ProductPage({
 
           <Separator className="my-6" />
 
-          {canAddToCart ? (
+          {bulkVariants ? (
+            /* Every strength, each with its own quantity. Same component the
+               quick-order form uses, so the two can't drift into behaving
+               differently — they're the same interaction at different scopes. */
+            <div className="overflow-hidden rounded-lg border">
+              <QuantityRowHeader productLabel="Option" />
+              <div className="divide-y">
+                {product.variants.map((v) => (
+                  <QuantityRow
+                    key={v.variantId}
+                    showProductName={false}
+                    item={{
+                      variantId: v.variantId,
+                      productId: product.productId,
+                      sku: v.sku,
+                      productName: product.name,
+                      label: v.label,
+                      imageUrl: v.imageUrl ?? product.imageUrl,
+                      price: v.price,
+                      listPrice: v.listPrice ?? null,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : canAddToCart ? (
             <AddToCartButton
               item={{
                 variantId: product.variantId,
@@ -157,6 +192,10 @@ export default async function ProductPage({
               This product isn&apos;t available for purchase right now.
             </p>
           )}
+
+          {/* Running total across the whole cart, not just this product — a
+              buyer working through several products needs one number. */}
+          {bulkVariants && <CartSummaryBar />}
 
           {product.description && (
             <>
