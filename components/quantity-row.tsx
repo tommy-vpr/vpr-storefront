@@ -45,9 +45,18 @@ export interface QuantityRowItem {
  * "Out of stock" is the honest version of that.
  */
 const STOCK_LABELS: Record<StockBand, { label: string; className: string }> = {
-  IN: { label: "In stock", className: "text-green-700 dark:text-green-400" },
-  LOW: { label: "Low stock", className: "text-amber-700 dark:text-amber-400" },
-  OUT: { label: "Backorder", className: "text-muted-foreground" },
+  IN: {
+    label: "In stock",
+    className: "text-green-600 rounded-full px-2 p-0.5 bg-green-50",
+  },
+  LOW: {
+    label: "Low stock",
+    className: "text-amber-600 rounded-full px-2 p-0.5 bg-amber-50",
+  },
+  OUT: {
+    label: "Out of stock",
+    className: "text-orange-600 rounded-full px-2 p-0.5 bg-orange-50",
+  },
 };
 
 export function QuantityRow({
@@ -175,7 +184,11 @@ export function QuantityRow({
 }
 
 /** Column headings, so both tables label their columns identically. */
-export function QuantityRowHeader({ productLabel = "Product" }: { productLabel?: string }) {
+export function QuantityRowHeader({
+  productLabel = "Product",
+}: {
+  productLabel?: string;
+}) {
   return (
     <div className="grid grid-cols-[1fr_auto_auto] gap-3 border-b bg-muted/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
       <span>{productLabel}</span>

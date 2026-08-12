@@ -23,6 +23,9 @@ export function CartSummaryBar() {
 
   return (
     <div className="sticky bottom-0 -mx-4 mt-6 border-t bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-lg sm:border">
+      <div className="w-full bg-muted text-xs rounded text-center p-1 mb-2">
+        Cart content
+      </div>
       <div className="flex items-center justify-between gap-4">
         <div className="text-sm">
           <span className="font-medium">

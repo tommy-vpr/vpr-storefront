@@ -66,13 +66,13 @@ export default async function ProductPage({
       </Button>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12">
-        <div className="aspect-square overflow-hidden rounded-lg border bg-muted">
+        <div className="aspect-square overflow-hidden rounded-lg border bg-muted flex items-center justify-center">
           {product.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={product.imageUrl}
               alt={product.name}
-              className="h-full w-full object-cover"
+              className="w-2/3 object-cover"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
@@ -104,9 +104,7 @@ export default async function ProductPage({
           <div className={bulkVariants ? "hidden" : "mt-6"}>
             {pricesHidden ? (
               <Button asChild variant="outline">
-                <Link
-                  href={`/login?redirect=/products/${product.variantId}`}
-                >
+                <Link href={`/login?redirect=/products/${product.variantId}`}>
                   Sign in to see price
                 </Link>
               </Button>
@@ -125,20 +123,6 @@ export default async function ProductPage({
               <p className="text-sm text-muted-foreground">
                 Not available for purchase
               </p>
-            )}
-          </div>
-
-          <div className="mt-2 flex items-center gap-2 text-xs">
-            {product.inStock ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2 py-0.5 text-green-700 dark:bg-green-950/40 dark:text-green-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
-                In stock
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-600" />
-                Backorder — ships when restocked
-              </span>
             )}
           </div>
 
