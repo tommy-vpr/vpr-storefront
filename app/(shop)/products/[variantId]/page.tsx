@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { getCatalogClient, getClient, isLoggedIn } from "@/lib/wms/session";
 import { WmsError } from "@/lib/wms/client";
 import { formatPrice } from "@/lib/format";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
 /**
  * Per-customer prices — this page must be rendered per request, not built
@@ -20,10 +20,15 @@ import { CartSummaryBar } from "@/components/cart-summary-bar";
 
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ variantId: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { variantId } = await params;
+  const { from } = await searchParams;
+
+  console.log("FROM:***", from);
 
   let product;
   try {
@@ -34,9 +39,18 @@ export default async function ProductPage({
     throw err;
   }
 
-  const [{ store }, loggedIn] = await Promise.all([
+  const [{ store }, loggedIn, fromCollection] = await Promise.all([
     getClient().getStore(),
     isLoggedIn(),
+    // Resolved rather than trusted: the slug decides a label shown to the
+    // customer, and an unknown one should drop the crumb, not render whatever
+    // was in the URL.
+    from
+      ? getClient()
+          .getCollection(from)
+          .then((d) => ({ name: d.collection.name, slug: from }))
+          .catch(() => null)
+      : Promise.resolve(null),
   ]);
 
   // Wholesale is account-priced, so a signed-out visitor has no price and
@@ -58,12 +72,24 @@ export default async function ProductPage({
 
   return (
     <>
-      <Button asChild variant="ghost" size="sm" className="-ml-3 mb-6">
-        <Link href="/" className="flex items-center gap-1">
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          Back
-        </Link>
-      </Button>
+      {/* The product itself doesn't know which collections it belongs to, so
+          the middle crumb comes from ?from= — set by the collection grid when
+          you click through. Arriving from a search result or a shared link
+          simply gets the shorter trail rather than a guessed one. */}
+      <Breadcrumbs
+        items={[
+          { label: "Home", href: "/" },
+          ...(fromCollection
+            ? [
+                {
+                  label: fromCollection.name,
+                  href: `/collections/${fromCollection.slug}`,
+                },
+              ]
+            : [{ label: "Collections", href: "/all-collections" }]),
+          { label: product.name },
+        ]}
+      />
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12">
         <div className="aspect-square overflow-hidden rounded-lg border bg-muted flex items-center justify-center">

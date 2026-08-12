@@ -86,6 +86,7 @@ export async function CollectionProducts({
             key={p.variantId}
             product={p}
             pricesHidden={pricesHidden}
+            fromCollection={slug}
           />
         ))}
       </div>
