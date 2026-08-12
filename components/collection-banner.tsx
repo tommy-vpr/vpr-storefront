@@ -23,7 +23,7 @@ export function CollectionBanner({
   if (!imageUrl) return null;
 
   return (
-    <div className="relative h-[30vh] min-h-[180px] w-full overflow-hidden">
+    <div className="relative h-[30vh] min-h-[180px] w-full overflow-hidden bg-gray-200 ">
       <Image
         src={imageUrl}
         alt={name}
@@ -36,13 +36,9 @@ export function CollectionBanner({
         className="object-cover"
       />
 
-      {/* Gradient rather than a flat overlay: the bottom needs to be dark
-          enough for text while the top stays as photographed. */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
-
-      <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10">
-        <div className="container mx-auto">
-          <h1 className="text-3xl font-semibold tracking-tight text-white drop-shadow-sm sm:text-4xl">
+      <div className="absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 bottom-0 p-6 sm:p-10">
+        <div className="container mx-auto p-4 bg-black/30 rounded">
+          <h1 className="text-xl lg:text-3xl font-semibold capitalize tracking-wide text-white drop-shadow-sm">
             {name}
           </h1>
           {description && (
