@@ -168,6 +168,23 @@ export interface CustomerProfile extends Customer {
   createdAt: string;
 }
 
+/**
+ * A single orderable line in the quick-order form. Flat and variant-level —
+ * see GET /storefront/quick-order for why that differs from the catalogue.
+ */
+export interface QuickOrderVariant {
+  variantId: string;
+  productId: string;
+  sku: string;
+  productName: string;
+  /** Strength or option, with the product name stripped. */
+  label: string;
+  imageUrl: string | null;
+  price: number | null;
+  /** Catalogue price, present only when this customer pays less. */
+  listPrice: number | null;
+}
+
 export interface AuthResponse {
   token: string;
   customer: Customer;
