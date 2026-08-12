@@ -60,8 +60,8 @@ export function QuickOrderTable({
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[220px]">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
@@ -127,8 +127,8 @@ export function QuickOrderTable({
           </p>
         ) : (
           <div className="divide-y">
-            {variants.map((v) => (
-              <QuantityRow key={v.variantId} item={v} />
+            {variants.map((v, index) => (
+              <QuantityRow key={v.variantId} item={v} index={index} />
             ))}
           </div>
         )}
@@ -142,6 +142,7 @@ export function QuickOrderTable({
             size="sm"
             disabled={page <= 1}
             onClick={() => navigate({ page: String(page - 1) })}
+            className="cursor-pointer"
           >
             Previous
           </Button>
@@ -153,6 +154,7 @@ export function QuickOrderTable({
             size="sm"
             disabled={page >= totalPages}
             onClick={() => navigate({ page: String(page + 1) })}
+            className="cursor-pointer"
           >
             Next
           </Button>

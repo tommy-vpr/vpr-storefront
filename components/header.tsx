@@ -137,13 +137,13 @@ export function Header({ store, customer, collections }: HeaderProps) {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/account">
+                  <Link href="/account" className="cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
                     Account
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/account/orders">
+                  <Link href="/account/orders" className="cursor-pointer">
                     <Package className="mr-2 h-4 w-4" />
                     Orders
                   </Link>

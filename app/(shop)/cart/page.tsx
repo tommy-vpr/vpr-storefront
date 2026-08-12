@@ -83,7 +83,7 @@ export default function CartPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-r-none"
+                    className="h-8 w-8 rounded-r-none cursor-pointer"
                     onClick={() =>
                       updateQuantity(item.variantId, item.quantity - 1)
                     }
@@ -98,7 +98,7 @@ export default function CartPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-l-none"
+                    className="h-8 w-8 rounded-l-none cursor-pointer"
                     onClick={() =>
                       updateQuantity(item.variantId, item.quantity + 1)
                     }
@@ -112,7 +112,7 @@ export default function CartPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
                   onClick={() => removeItem(item.variantId)}
                   aria-label="Remove from cart"
                 >
