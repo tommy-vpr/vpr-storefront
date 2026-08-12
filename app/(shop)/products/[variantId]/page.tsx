@@ -71,7 +71,7 @@ export default async function ProductPage({
   const canAddToCart = !pricesHidden && product.price !== null;
 
   return (
-    <>
+    <div className="min-h-[70vh] max-w-7xl mx-auto">
       {/* The product itself doesn't know which collections it belongs to, so
           the middle crumb comes from ?from= — set by the collection grid when
           you click through. Arriving from a search result or a shared link
@@ -232,6 +232,6 @@ export default async function ProductPage({
           </dl>
         </div>
       </div>
-    </>
+    </div>
   );
 }

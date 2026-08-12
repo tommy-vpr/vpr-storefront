@@ -101,7 +101,7 @@ export function QuantityRow({
       }`}
     >
       <div className="min-w-0">
-        <p className="truncate text-sm">
+        <p className="text-sm">
           {showProductName ? (
             <>
               {item.productName}

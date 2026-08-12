@@ -103,6 +103,7 @@ export function QuickOrderTable({
 
         <Button
           variant="secondary"
+          className="cursor-pointer bg-primary hover:bg-primary/90 transition p-4 text-white"
           size="sm"
           onClick={() => navigate({ q: query || null })}
         >
