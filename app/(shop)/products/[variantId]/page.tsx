@@ -164,6 +164,7 @@ export default async function ProductPage({
                       imageUrl: v.imageUrl ?? product.imageUrl,
                       price: v.price,
                       listPrice: v.listPrice ?? null,
+                      stock: v.stock ?? null,
                     }}
                   />
                 ))}

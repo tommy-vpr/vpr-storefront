@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/components/cart-provider";
 import { formatPrice } from "@/lib/format";
+import type { StockBand } from "@/lib/wms/types";
 
 /**
  * One orderable variant with a quantity control.
@@ -32,7 +33,22 @@ export interface QuantityRowItem {
   price: number | null;
   /** Catalogue price, present only when this customer pays less. */
   listPrice: number | null;
+  stock?: StockBand | null;
 }
+
+/**
+ * Bands, not counts. "Low" is the useful one: it tells a buyer to expect a
+ * conversation about quantity without telling them how much we hold.
+ *
+ * OUT is deliberately not a block — this business backorders, so the line is
+ * orderable and simply won't ship immediately. Saying "Backorder" rather than
+ * "Out of stock" is the honest version of that.
+ */
+const STOCK_LABELS: Record<StockBand, { label: string; className: string }> = {
+  IN: { label: "In stock", className: "text-green-700 dark:text-green-400" },
+  LOW: { label: "Low stock", className: "text-amber-700 dark:text-amber-400" },
+  OUT: { label: "Backorder", className: "text-muted-foreground" },
+};
 
 export function QuantityRow({
   item,
@@ -90,6 +106,13 @@ export function QuantityRow({
         </p>
         <p className="font-mono text-[11px] text-muted-foreground">
           {item.sku}
+          {item.stock && (
+            <span
+              className={`ml-2 font-sans ${STOCK_LABELS[item.stock].className}`}
+            >
+              {STOCK_LABELS[item.stock].label}
+            </span>
+          )}
         </p>
       </div>
 
