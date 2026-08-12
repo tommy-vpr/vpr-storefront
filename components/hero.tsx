@@ -46,7 +46,10 @@ const SLIDES: Slide[] = [
 
 const Hero = () => {
   return (
-    <section className="hero-swiper mb-12 w-full rounded-xl overflow-hidden">
+    /* Full-bleed: no rounding and no side margin, so the slider meets the
+       viewport edges. The rounded-xl that used to be here only made sense
+       inside the centred container. */
+    <section className="hero-swiper mb-12 w-full overflow-hidden">
       <Swiper
         modules={[Autoplay, Pagination, Navigation, EffectFade]}
         effect="fade"

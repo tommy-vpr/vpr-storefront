@@ -29,6 +29,8 @@ export interface Collection {
   slug: string;
   name: string;
   description: string | null;
+  /** Wide banner for the collection page. Null on most collections. */
+  bannerUrl?: string | null;
   productCount: number;
   featured: boolean;
   sortOrder: number;
@@ -41,8 +43,15 @@ export interface CollectionMeta {
   slug: string;
   name: string;
   description: string | null;
-  /** Not yet returned by the WMS; present here for the Phase 2 metadata endpoint. */
-  heroImage?: string | null;
+  /**
+   * Wide banner for this collection's page. Null on most collections — the
+   * page falls back to a plain heading rather than stretching something that
+   * wasn't cropped for it.
+   *
+   * (Replaces the `heroImage` placeholder, which the WMS never returned. One
+   * name for one thing.)
+   */
+  bannerUrl?: string | null;
   productCount?: number;
 }
 

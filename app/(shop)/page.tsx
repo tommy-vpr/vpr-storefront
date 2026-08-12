@@ -7,6 +7,7 @@ import { AnimatedTestimonials } from "@/components/ui/animated-testimonials";
 import { CollectionShowcase } from "@/components/collectionShowcase";
 import { QuickLinks } from "@/components/quickLinks";
 import Hero from "@/components/hero";
+import { FullBleed } from "@/components/full-bleed";
 
 const TESTIMONIALS = [
   {
@@ -76,7 +77,11 @@ export default async function ShopHomePage() {
         </div>
       </section> */}
 
-      <Hero />
+      {/* Escapes the layout's centred container so the slider meets the
+          viewport edges. */}
+      <FullBleed className="mb-12">
+        <Hero />
+      </FullBleed>
 
       <section className="container mx-auto flex-1 px-4 py-8">
         {/* Benefits */}
