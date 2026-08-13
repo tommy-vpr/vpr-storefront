@@ -238,7 +238,9 @@ export default async function OrderDetailPage({
           {order.paymentMethod?.last4 ? (
             <p className="text-sm">
               {order.paymentMethod.brand ?? "Card"} ending in{" "}
-              <span className="font-mono">{order.paymentMethod.last4}</span>
+              <span className="font-mono text-xs py-1 px-2 rounded-md border bg-muted">
+                {order.paymentMethod.last4}
+              </span>
             </p>
           ) : (
             /* No payment row means a terms or invoiced order — saying
