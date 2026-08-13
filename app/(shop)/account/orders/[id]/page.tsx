@@ -238,7 +238,7 @@ export default async function OrderDetailPage({
           {order.paymentMethod?.last4 ? (
             <p className="text-sm">
               {order.paymentMethod.brand ?? "Card"} ending in{" "}
-              <span className="font-mono text-xs py-1 px-2 rounded-md border bg-muted">
+              <span className="ml-1 font-mono text-sm py-1 px-2 rounded border border-gray-300 bg-mute tracking-wide">
                 {order.paymentMethod.last4}
               </span>
             </p>
