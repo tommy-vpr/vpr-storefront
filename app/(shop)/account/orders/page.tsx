@@ -83,9 +83,10 @@ export default async function OrdersPage({
             {orders.map((o) => {
               const { label } = friendlyStatus(o.status);
               return (
-                <div
+                <Link
                   key={o.id}
-                  className="flex items-center justify-between gap-4 p-4"
+                  href={`/account/orders/${o.id}`}
+                  className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-muted/50"
                 >
                   <div className="min-w-0">
                     <p className="font-medium">{o.orderNumber}</p>
@@ -107,7 +108,7 @@ export default async function OrdersPage({
                   <div className="shrink-0 text-right">
                     <p className="font-medium">{formatPrice(o.totalAmount)}</p>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

@@ -308,6 +308,14 @@ export interface OrderDetail {
   shippedAt: string | null;
   createdAt: string;
   items: OrderItem[];
+  /**
+   * The card used, if any. Null on a terms or invoiced order, which has no
+   * payment row at all — so this is genuinely optional, not just missing data.
+   *
+   * Last four and brand only. The full number never reaches the WMS: Accept.js
+   * tokenizes it in the browser and only the token is sent.
+   */
+  paymentMethod?: { brand: string | null; last4: string | null } | null;
   shipments?: Array<{
     trackingNumber: string | null;
     trackingUrl: string | null;
