@@ -54,7 +54,7 @@ export default async function OrdersPage({
   const hasMore = skip + orders.length < total;
 
   return (
-    <div className="mx-auto max-w-2xl mt-12">
+    <div className="mx-auto max-w-2xl mt-12 min-h-[60vh]">
       <h1 className="text-3xl font-semibold tracking-tight">Your orders</h1>
 
       {orders.length === 0 ? (

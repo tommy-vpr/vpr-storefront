@@ -30,6 +30,8 @@ import { formatPrice } from "@/lib/format";
 import { placeOrderAction } from "./actions";
 import type { ShippingAddress } from "@/lib/wms/types";
 import Image from "next/image";
+import { useCardValidation, formatCardNumber } from "@/lib/use-card-validation";
+import { cn } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -60,6 +62,21 @@ const EMPTY_ADDRESS: ShippingAddress = {
   country: "US",
   phone: "",
 };
+
+const CARD_LOGOS = [
+  { brand: "visa", src: "/images/cards/visa.svg", alt: "Visa" },
+  {
+    brand: "mastercard",
+    src: "/images/cards/mastercard.svg",
+    alt: "Mastercard",
+  },
+  { brand: "discover", src: "/images/cards/discover.svg", alt: "Discover" },
+  {
+    brand: "american-express",
+    src: "/images/cards/amex.svg",
+    alt: "American Express",
+  },
+];
 
 export function CheckoutForm({
   acceptJsUrl,
@@ -102,6 +119,12 @@ export function CheckoutForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scriptRequested = useRef(false);
+
+  const cardCheck = useCardValidation(card);
+
+  const activeCardLogo = CARD_LOGOS.find(
+    (logo) => logo.brand === cardCheck.brand,
+  );
 
   useEffect(() => {
     if (scriptRequested.current) return;
@@ -203,6 +226,8 @@ export function CheckoutForm({
         "Still verifying you're human — give it a second and try again.",
       );
     }
+
+    if (cardCheck.firstProblem) return setError(cardCheck.firstProblem);
 
     setSubmitting(true);
     try {
@@ -412,25 +437,52 @@ export function CheckoutForm({
         <section className="space-y-3">
           <h2 className="text-lg font-medium">Payment</h2>
 
-          <Image
-            src="/images/payment_methods.webp"
-            width={480}
-            height={280}
-            alt="payment methods"
-            quality={100}
-            className="w-[240px] h-auto"
-          />
+          <div className="flex items-center gap-2">
+            {CARD_LOGOS.map((logo) => (
+              <img
+                key={logo.brand}
+                src={logo.src}
+                alt={logo.alt}
+                className="h-6"
+              />
+            ))}
+          </div>
 
           <div className="grid gap-1.5">
             <Label htmlFor="card-number">Card number</Label>
-            <Input
-              id="card-number"
-              inputMode="numeric"
-              autoComplete="cc-number"
-              value={card.number}
-              onChange={(e) => setCard({ ...card, number: e.target.value })}
-            />
+
+            <div className="relative">
+              <Input
+                id="card-number"
+                inputMode="numeric"
+                autoComplete="cc-number"
+                value={card.number}
+                maxLength={cardCheck.maxNumberLength}
+                onChange={(e) =>
+                  setCard({
+                    ...card,
+                    number: formatCardNumber(e.target.value),
+                  })
+                }
+                className="pr-14"
+              />
+
+              {activeCardLogo && (
+                <img
+                  src={activeCardLogo.src}
+                  alt={activeCardLogo.alt}
+                  className="pointer-events-none absolute right-3 top-1/2 h-5 w-auto -translate-y-1/2"
+                />
+              )}
+            </div>
+
+            {cardCheck.errors.number && (
+              <p className="text-xs text-destructive">
+                {cardCheck.errors.number}
+              </p>
+            )}
           </div>
+
           <div className="grid grid-cols-3 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="card-month">MM</Label>
@@ -455,12 +507,12 @@ export function CheckoutForm({
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="card-cvv">CVV</Label>
+              <Label htmlFor="card-cvv">{cardCheck.cvvLabel}</Label>
               <Input
                 id="card-cvv"
                 inputMode="numeric"
                 autoComplete="cc-csc"
-                maxLength={4}
+                maxLength={cardCheck.cvvSize}
                 value={card.cvv}
                 onChange={(e) => setCard({ ...card, cvv: e.target.value })}
               />
@@ -526,7 +578,7 @@ export function CheckoutForm({
         )}
 
         {error && (
-          <p className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+          <p className="mt-4 border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
             {error}
           </p>
         )}

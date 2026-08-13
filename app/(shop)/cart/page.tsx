@@ -23,7 +23,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-xl py-16 text-center min-h-[60vh] flex flex-col justify-center items-center">
+      <div className="mx-auto max-w-xl py-16 text-center min-h-[50vh] flex flex-col justify-center items-center">
         <h1 className="text-2xl font-semibold">Your cart is empty</h1>
         <p className="mt-2 text-muted-foreground">
           Add products from the shop to get started.
