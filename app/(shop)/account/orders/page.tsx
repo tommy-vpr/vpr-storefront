@@ -54,7 +54,7 @@ export default async function OrdersPage({
   const hasMore = skip + orders.length < total;
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl mt-12">
       <h1 className="text-3xl font-semibold tracking-tight">Your orders</h1>
 
       {orders.length === 0 ? (
@@ -63,8 +63,8 @@ export default async function OrdersPage({
             No orders on this account yet.
           </p>
           <p className="mt-3 text-sm text-muted-foreground">
-            Ordered as a guest? Those aren&apos;t linked to an account — use
-            the tracking link from your confirmation email, or{" "}
+            Ordered as a guest? Those aren&apos;t linked to an account — use the
+            tracking link from your confirmation email, or{" "}
             <Link
               href="/orders/lookup"
               className="font-medium text-foreground underline underline-offset-4"

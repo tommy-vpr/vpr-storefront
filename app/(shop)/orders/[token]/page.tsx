@@ -39,7 +39,7 @@ export default async function OrderStatusPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl mt-12">
       <OrderStatusCard order={order} />
 
       <p className="mt-6 text-sm text-muted-foreground">

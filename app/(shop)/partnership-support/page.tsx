@@ -133,8 +133,10 @@ export default function Page() {
                 key={id}
                 type="button"
                 onClick={() => setActiveTab(id)}
-                className="cursor-pointer flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-xs lg:text-sm font-medium  transition hover:bg-gray-900 hover:text-white"
-                style={isActive ? { background: ACCENT } : undefined}
+                className="cursor-pointer flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-xs lg:text-sm font-medium  transition hover:bg-gray-200"
+                style={
+                  isActive ? { background: ACCENT, color: "white" } : undefined
+                }
               >
                 <Icon className="h-4 w-4" />
                 <span>{label}</span>

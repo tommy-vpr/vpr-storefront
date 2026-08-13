@@ -22,7 +22,7 @@ export default async function LookupPage({
   const { placed } = await searchParams;
 
   return (
-    <div className="mx-auto max-w-md">
+    <div className="mx-auto max-w-md mt-12">
       {placed ? (
         <>
           <h1 className="text-3xl font-semibold tracking-tight">
