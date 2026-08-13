@@ -34,7 +34,7 @@ export default async function AccountPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl mt-12">
       <h1 className="text-3xl font-semibold tracking-tight">Your account</h1>
       <p className="mt-2 text-sm text-muted-foreground">{customer.email}</p>
 
@@ -49,8 +49,8 @@ export default async function AccountPage() {
       <section>
         <h2 className="text-lg font-medium">Details</h2>
         <p className="mt-1 mb-4 text-sm text-muted-foreground">
-          Saved for convenience. You&apos;ll still confirm a shipping address
-          at checkout.
+          Saved for convenience. You&apos;ll still confirm a shipping address at
+          checkout.
         </p>
         <ProfileForm customer={customer} />
       </section>

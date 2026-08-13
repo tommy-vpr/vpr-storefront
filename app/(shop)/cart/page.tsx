@@ -36,7 +36,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl pt-12">
       <h1 className="mb-8 text-3xl font-semibold tracking-tight">Cart</h1>
 
       <div className="space-y-4">
