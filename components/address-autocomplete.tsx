@@ -75,6 +75,14 @@ export function AddressAutocomplete({
   // Set while applying a selection, so the resulting value change doesn't
   // immediately re-query and reopen the list.
   const applying = useRef(false);
+  // Suggestions are for people TYPING. Without this the effect fires on mount
+  // with whatever the field was prefilled with — a saved profile address on
+  // /account, or the same address prefilled into checkout — and the dropdown
+  // opens over the form before anyone has touched it.
+  //
+  // It also cost real money: Google bills a Places session, so every account
+  // and checkout page view was paying for a lookup nobody asked for.
+  const userTyped = useRef(false);
 
   // Close on an outside click. Without this the list survives a click into the
   // next field and covers it.
@@ -93,6 +101,7 @@ export function AddressAutocomplete({
       applying.current = false;
       return;
     }
+    if (!userTyped.current) return;
     if (value.trim().length < 4) {
       setSuggestions([]);
       setOpen(false);
@@ -169,7 +178,10 @@ export function AddressAutocomplete({
         id={id}
         name={name}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          userTyped.current = true;
+          onChange(e.target.value);
+        }}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         autoComplete={autoComplete}
         disabled={disabled}
