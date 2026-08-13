@@ -76,7 +76,7 @@ function FooterColumn({
 export function Footer() {
   return (
     <footer className="bg-gray-100">
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           <FooterColumn title="Quick Links">
             {QUICK_LINKS.map((l) => (
@@ -137,7 +137,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 text-[13px] leading-relaxed text-gray-500">
+        <div className="text-[13px] leading-relaxed text-gray-500">
           Not for Sale for Minors — Products sold on this site may contain
           nicotine which is a highly addictive substance. California Proposition
           65 - WARNING: This product can expose you to chemicals including
@@ -167,7 +167,7 @@ export function Footer() {
           Products On This Site At Your Own Risk!
         </div>
 
-        <div className="mt-8 border-t border-white/10 pt-6 text-center text-sm text-gray-400">
+        <div className="mt-4 border-t border-gray-200 py-4 text-center text-sm text-gray-400">
           VPR Collection&copy;{new Date().getFullYear()}
         </div>
       </div>

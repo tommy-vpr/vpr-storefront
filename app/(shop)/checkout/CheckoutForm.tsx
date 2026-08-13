@@ -29,6 +29,7 @@ import { Turnstile, type TurnstileHandle } from "@/components/turnstile";
 import { formatPrice } from "@/lib/format";
 import { placeOrderAction } from "./actions";
 import type { ShippingAddress } from "@/lib/wms/types";
+import Image from "next/image";
 
 declare global {
   interface Window {
@@ -410,6 +411,16 @@ export function CheckoutForm({
 
         <section className="space-y-3">
           <h2 className="text-lg font-medium">Payment</h2>
+
+          <Image
+            src="/images/payment_methods.webp"
+            width={480}
+            height={280}
+            alt="payment methods"
+            quality={100}
+            className="w-[240px] h-auto"
+          />
+
           <div className="grid gap-1.5">
             <Label htmlFor="card-number">Card number</Label>
             <Input
