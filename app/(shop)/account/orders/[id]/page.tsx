@@ -19,6 +19,31 @@ import { formatPrice } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Payment status in the customer's terms. AUTHORIZED is the one that matters:
+ * their bank shows a pending charge, and "authorized" would send them looking
+ * for a problem that isn't there.
+ */
+function friendlyPaymentStatus(status: string): string {
+  switch (status) {
+    case "PAID":
+      return "Charged";
+    case "AUTHORIZED":
+      return "Held — charged when your order ships";
+    case "REFUNDED":
+      return "Refunded";
+    case "PARTIALLY_REFUNDED":
+      return "Partially refunded";
+    case "FAILED":
+      return "Not charged";
+    case "UNPAID":
+    case "UNPAID_OVERDUE":
+      return "Payment due";
+    default:
+      return "";
+  }
+}
+
 export default async function OrderDetailPage({
   params,
 }: {
@@ -203,27 +228,30 @@ export default async function OrderDetailPage({
           </address>
         </div>
 
-        {order.billingAddress && (
-          <div className="rounded-lg border bg-card p-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Billed to
+        {/* Payment method rather than the billing address. A customer
+            checking an old order wants to know WHICH CARD they used — the
+            billing address is something they typed and rarely need back. */}
+        <div className="rounded-lg border bg-card p-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Payment
+          </p>
+          {order.paymentMethod?.last4 ? (
+            <p className="text-sm">
+              {order.paymentMethod.brand ?? "Card"} ending in{" "}
+              <span className="font-mono">{order.paymentMethod.last4}</span>
             </p>
-            <address className="text-sm not-italic leading-relaxed">
-              {order.billingAddress.name}
-              <br />
-              {order.billingAddress.address1}
-              {order.billingAddress.address2 && (
-                <>
-                  <br />
-                  {order.billingAddress.address2}
-                </>
-              )}
-              <br />
-              {order.billingAddress.city}, {order.billingAddress.state}{" "}
-              {order.billingAddress.zip}
-            </address>
-          </div>
-        )}
+          ) : (
+            /* No payment row means a terms or invoiced order — saying
+               "no card" would read as a failure rather than the arrangement
+               it is. */
+            <p className="text-sm text-muted-foreground">
+              {order.paymentStatus === "PAID" ? "Paid" : "Invoiced"}
+            </p>
+          )}
+          <p className="mt-1 text-xs text-muted-foreground">
+            {friendlyPaymentStatus(order.paymentStatus)}
+          </p>
+        </div>
       </div>
 
       <div className="mt-8">
