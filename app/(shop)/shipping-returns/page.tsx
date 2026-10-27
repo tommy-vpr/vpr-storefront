@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function ShippingReturnsPage() {
   return (
-    <main className="container mx-auto h-screen max-w-3xl px-4 py-12 sm:py-16">
+    <main className="container mx-auto h-screen max-w-3xl px-0 py-6 sm:px-4 sm:py-16">
       <h1 className="mb-8 text-3xl font-bold uppercase tracking-tight sm:text-4xl">
         Shipping and Returns
       </h1>

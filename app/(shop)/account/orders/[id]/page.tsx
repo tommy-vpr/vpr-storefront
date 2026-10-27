@@ -80,7 +80,7 @@ export default async function OrderDetailPage({
   const adjustments = Number((order.totalAmount - subtotal).toFixed(2));
 
   return (
-    <div className="mx-auto max-w-3xl mt-12">
+    <div className="mx-auto max-w-3xl mt-6 sm:mt-12">
       <Breadcrumbs
         items={[
           { label: "Account", href: "/account" },

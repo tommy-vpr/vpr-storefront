@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function WholesaleApplicationPage() {
   return (
-    <section className="container mx-auto max-w-3xl px-4 py-12 sm:py-16">
+    <section className="container mx-auto max-w-3xl px-0 py-6 sm:px-4 sm:py-16">
       <div className="rounded-xl p-8 shadow-2xl shadow-gray-400/20 border border-gray-100">
         <h1 className="mb-4 text-4xl font-bold uppercase">
           Wholesale Application

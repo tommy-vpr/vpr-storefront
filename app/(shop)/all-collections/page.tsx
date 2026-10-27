@@ -11,7 +11,7 @@ const page = async () => {
   return (
     <section
       id="collections"
-      className="container mx-auto p-4 lg:p-12 min-h-[56vh]"
+      className="container mx-auto p-0 pt-6 sm:p-4 lg:p-12 min-h-[56vh]"
     >
       <div className="mb-6 flex items-baseline justify-between">
         <h2 className="text-2xl font-semibold tracking-tight">Collections</h2>

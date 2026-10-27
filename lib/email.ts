@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { renderOrderConfirmation, type OrderConfirmation } from "./order-confirmation";
 
 /**
  * Transactional email for WMS order events.
@@ -176,60 +177,8 @@ export async function sendOrderCancelledEmail(
  * order response. A tampered cart can therefore make a receipt say the wrong
  * product NAME, and never the wrong price.
  */
-export async function sendOrderConfirmationEmail(args: {
-  orderId: string;
-  orderNumber: string;
-  to: string;
-  totalAmount: number;
-  statusUrl: string;
-  items: Array<{ name: string; quantity: number; totalPrice: number }>;
-}): Promise<void> {
-  const orderNumber = escapeHtml(args.orderNumber);
-
-  const rows = args.items
-    .map(
-      (i) => `
-      <tr>
-        <td style="padding:8px 0;color:#111;">${escapeHtml(i.name)}</td>
-        <td style="padding:8px 0;color:#555;text-align:center;">${i.quantity}</td>
-        <td style="padding:8px 0;color:#111;text-align:right;">$${i.totalPrice.toFixed(2)}</td>
-      </tr>`,
-    )
-    .join("");
-
-  const html = `
-    <div style="font-family:system-ui,-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111;">
-      <h1 style="font-size:22px;margin:0 0 8px;">Thanks for your order</h1>
-      <p style="color:#555;margin:0 0 24px;">Order ${orderNumber}</p>
-
-      <table style="width:100%;border-collapse:collapse;font-size:14px;">
-        ${rows}
-        <tr>
-          <td colspan="3" style="border-top:1px solid #eee;padding-top:12px;"></td>
-        </tr>
-        <tr>
-          <td style="font-weight:600;">Total</td>
-          <td></td>
-          <td style="font-weight:600;text-align:right;">$${args.totalAmount.toFixed(2)}</td>
-        </tr>
-      </table>
-
-      <p style="margin:24px 0;">
-        <a href="${escapeHtml(args.statusUrl)}"
-           style="background:#111;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;display:inline-block;">
-          View your order
-        </a>
-      </p>
-
-      <p style="color:#555;font-size:14px;margin:16px 0;">
-        Your card is authorized now and charged when your order ships. Shipping
-        is calculated at fulfillment, and tracking appears on the page above as
-        soon as it's on its way.
-      </p>
-
-      <hr style="border:none;border-top:1px solid #eee;margin:32px 0;" />
-      <p style="color:#888;font-size:13px;margin:0;">${escapeHtml(STORE_NAME)}</p>
-    </div>`;
+export async function sendOrderConfirmationEmail(args: OrderConfirmation): Promise<void> {
+  const html = renderOrderConfirmation(args, STORE_NAME);
 
   await send({
     to: args.to,
