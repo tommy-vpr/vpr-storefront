@@ -97,20 +97,30 @@ export async function placeOrderAction(
         // cloudflared tunnel and in production without extra configuration.
         const base = process.env.NEXT_PUBLIC_SITE_URL ?? `${proto}://${host}`;
 
+        // Catalog lookup failures must never undo a confirmed order or prevent its receipt.
+        const details = await Promise.allSettled(order.items.map(async item => {
+          if (!item.productVariantId) return null;
+          const { product } = await client.getProduct(item.productVariantId);
+          return product;
+        }));
+
         await sendOrderConfirmationEmail({
           orderId: order.id,
           orderNumber: order.orderNumber,
           to: input.email,
           totalAmount: order.totalAmount,
           statusUrl: `${base}/orders/${order.guestAccessToken}`,
-          items: order.items.map((i) => ({
-            name:
-              (i.productVariantId &&
-                input.displayNames?.[i.productVariantId]) ||
-              i.sku,
-            quantity: i.quantity,
-            totalPrice: i.totalPrice,
-          })),
+          items: order.items.map((item, index) => {
+            const result = details[index];
+            const product = result.status === 'fulfilled' ? result.value : null;
+            return {
+              name: product?.name || (item.productVariantId && input.displayNames?.[item.productVariantId]) || item.sku,
+              variantName: product?.variantName,
+              imageUrl: product?.imageUrl,
+              quantity: item.quantity,
+              totalPrice: item.totalPrice,
+            };
+          }),
         });
       } catch (err) {
         console.error("[checkout] confirmation email failed", err);

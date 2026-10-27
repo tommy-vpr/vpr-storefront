@@ -83,7 +83,7 @@ export default async function ShopHomePage() {
         <Hero />
       </FullBleed>
 
-      <section className="container mx-auto flex-1 px-4 py-8">
+      <section className="container mx-auto flex-1 px-0 py-4 sm:px-4 sm:py-8">
         {/* Benefits */}
         <div className="mb-12">
           <BenefitsSection />

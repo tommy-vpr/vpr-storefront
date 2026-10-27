@@ -58,7 +58,7 @@ const SECTIONS: { heading: string; body: string }[] = [
 
 export default function TermsPage() {
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-12 sm:py-16">
+    <main className="container mx-auto max-w-3xl px-0 py-6 sm:px-4 sm:py-16">
       <h1 className="mb-4 text-3xl font-bold uppercase tracking-tight sm:text-4xl">
         Terms of Use
       </h1>

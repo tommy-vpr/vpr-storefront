@@ -167,6 +167,8 @@ export interface Customer {
 }
 
 export interface CustomerProfile extends Customer {
+  /** CRM-linked customer eligible for wholesale navigation. */
+  wholesaleAccount?: boolean;
   phone: string | null;
   addressLine1: string | null;
   addressLine2: string | null;

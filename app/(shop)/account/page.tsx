@@ -34,7 +34,7 @@ export default async function AccountPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl mt-12">
+    <div className="mx-auto max-w-2xl mt-6 sm:mt-12">
       <h1 className="text-3xl font-semibold tracking-tight">Your account</h1>
       <p className="mt-2 text-sm text-muted-foreground">{customer.email}</p>
 

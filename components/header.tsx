@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, LogOut, Package, User } from "lucide-react";
+import { ChevronDown, LogOut, Package, User, ListOrdered } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,7 +28,6 @@ const BRAND_PLACEHOLDERS: { label: string; href: string }[] = [
 // Static utility links. Point to real pages once they exist.
 const UTILITY_LINKS: { label: string; href: string }[] = [
   { label: "Wholesale App", href: "/wholesale-application" },
-  { label: "Quick Order", href: "/quick-order" },
   { label: "Merch", href: "/collections/skwezed-merch" },
   { label: "Contact", href: "/contact" },
 ];
@@ -44,9 +43,10 @@ interface HeaderProps {
     email: string;
   } | null;
   collections: Collection[];
+  showQuickOrder?: boolean;
 }
 
-export function Header({ store, customer, collections }: HeaderProps) {
+export function Header({ store, customer, collections, showQuickOrder = false }: HeaderProps) {
   const isAuthed = customer !== null;
   const displayName = customer?.name ?? customer?.email ?? null;
   const NAV_EXCLUDED_SLUGS = new Set(["skwezed-ijoy", "skwezed-merch"]);
@@ -112,6 +112,7 @@ export function Header({ store, customer, collections }: HeaderProps) {
               <Link href={item.href}>{item.label}</Link>
             </Button>
           ))}
+          {showQuickOrder && <Button asChild variant="ghost" size="sm"><Link href="/quick-order">Quick Order</Link></Button>}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -151,6 +152,7 @@ export function Header({ store, customer, collections }: HeaderProps) {
                     Orders
                   </Link>
                 </DropdownMenuItem>
+                {showQuickOrder && <DropdownMenuItem asChild><Link href="/quick-order" className="cursor-pointer"><ListOrdered className="mr-2 h-4 w-4" />Quick Order</Link></DropdownMenuItem>}
                 <DropdownMenuSeparator />
                 <form action={logoutAction}>
                   <DropdownMenuItem asChild nativeButton>

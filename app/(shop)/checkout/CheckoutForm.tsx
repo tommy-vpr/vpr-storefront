@@ -117,6 +117,7 @@ export function CheckoutForm({
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileHandle | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState<{ number: string; url: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const scriptRequested = useRef(false);
 
@@ -250,7 +251,7 @@ export function CheckoutForm({
         displayNames: Object.fromEntries(
           items.map((i) => [
             i.variantId,
-            i.variantName ? `${i.name} — ${i.variantName}` : i.name,
+            i.name,
           ]),
         ),
       });
@@ -268,19 +269,31 @@ export function CheckoutForm({
         return;
       }
 
-      // Order is placed and authorized. Empty the cart before navigating so a
-      // back-button press can't resubmit it.
+      const confirmationUrl = result.token
+        ? `/orders/${result.token}`
+        : `/orders/lookup?placed=${encodeURIComponent(result.orderNumber)}`;
+      // Show success before clearing the cart while the confirmation route loads.
+      setCompletedOrder({ number: result.orderNumber, url: confirmationUrl });
       clear();
-      router.push(
-        result.token
-          ? `/orders/${result.token}`
-          : `/orders/lookup?placed=${encodeURIComponent(result.orderNumber)}`,
-      );
+      router.replace(confirmationUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setSubmitting(false);
     }
   };
+
+  if (completedOrder) {
+    return (
+      <div className="py-12 text-center" role="status" aria-live="polite">
+        <h2 className="text-2xl font-semibold">Order placed successfully!</h2>
+        <p className="mt-3 text-muted-foreground">Thank you! Your order {completedOrder.number} has been received.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Opening your order confirmation…</p>
+        <Button asChild className="mt-6">
+          <Link href={completedOrder.url}>View your order</Link>
+        </Button>
+      </div>
+    );
+  }
 
   if (!isHydrated) {
     return <p className="text-muted-foreground">Loading…</p>;
@@ -527,7 +540,12 @@ export function CheckoutForm({
 
       <aside className="h-fit rounded-lg border bg-card p-5 lg:sticky lg:top-6">
         <h2 className="mb-4 text-lg font-medium">Order summary</h2>
-        <div className="space-y-3">
+        <div
+          className="max-h-[min(40dvh,24rem)] space-y-3 overflow-y-auto pr-2 [scrollbar-gutter:stable] focus-visible:outline-2 focus-visible:outline-offset-2"
+          role="region"
+          aria-label="Order items"
+          tabIndex={0}
+        >
           {items.map((i) => (
             <div
               key={i.variantId}

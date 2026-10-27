@@ -73,6 +73,7 @@ export default async function ShopLayout({
               ? { name: meRes.customer.name, email: meRes.customer.email }
               : null
           }
+          showQuickOrder={Boolean(meRes && (meRes.customer.wholesaleAccount ?? storeRes?.store.mode === "WHOLESALE"))}
           collections={collections}
         />
         {/* Hero */}
