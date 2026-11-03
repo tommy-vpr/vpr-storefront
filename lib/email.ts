@@ -37,6 +37,14 @@ function getResend(): Resend {
 const FROM = process.env.EMAIL_FROM || "orders@vprcollection.com";
 const STORE_NAME = process.env.NEXT_PUBLIC_STORE_NAME || "VPR Collection";
 
+/** Preserve the configured verified address, even when EMAIL_FROM has an old display name. */
+export function storefrontSender(storeName:string, configured:string):string {
+  const name = storeName.replace(/[\r\n<>"\\]/g,' ').replace(/\s+/g,' ').trim();
+  const address = (configured.match(/<([^<>]+)>/)?.[1] || configured).replace(/[\r\n]/g,'').trim();
+  if (!/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(address)) throw new Error('Invalid EMAIL_FROM address');
+  return '"'+name+'" <'+address+'>';
+}
+
 interface OrderEventData {
   orderId: string;
   orderNumber: string;
@@ -109,7 +117,7 @@ export async function sendOrderShippedEmail(
 
   const html = `
     <div style="font-family:system-ui,-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111;">
-      <h1 style="font-size:22px;margin:0 0 8px;">Your order has shipped</h1>
+      <h1 style="font-size:22px;margin:0 0 8px;">${escapeHtml(STORE_NAME)} — Your order has shipped</h1>
       <p style="color:#555;margin:0 0 16px;">Order ${orderNumber}</p>
       ${trackingBlock}
       <hr style="border:none;border-top:1px solid #eee;margin:32px 0;" />
@@ -118,7 +126,7 @@ export async function sendOrderShippedEmail(
 
   await send({
     to: data.customerEmail,
-    subject: `Your order ${data.orderNumber} has shipped`,
+    subject: `${STORE_NAME} — Order ${data.orderNumber} has shipped`,
     html,
     idempotencyKey: eventId,
   });
@@ -140,7 +148,7 @@ export async function sendOrderCancelledEmail(
 
   const html = `
     <div style="font-family:system-ui,-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111;">
-      <h1 style="font-size:22px;margin:0 0 8px;">Your order was cancelled</h1>
+      <h1 style="font-size:22px;margin:0 0 8px;">${escapeHtml(STORE_NAME)} — Your order was cancelled</h1>
       <p style="color:#555;margin:0 0 16px;">Order ${orderNumber}</p>
       ${reasonBlock}
       <p style="margin:16px 0;">
@@ -153,7 +161,7 @@ export async function sendOrderCancelledEmail(
 
   await send({
     to: data.customerEmail,
-    subject: `Your order ${data.orderNumber} was cancelled`,
+    subject: `${STORE_NAME} — Order ${data.orderNumber} was cancelled`,
     html,
     idempotencyKey: eventId,
   });
@@ -201,7 +209,7 @@ async function send(opts: {
 
   const { error } = await getResend().emails.send(
     {
-      from: FROM,
+      from: storefrontSender(STORE_NAME, FROM),
       to: [opts.to],
       subject: opts.subject,
       html: opts.html,
