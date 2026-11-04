@@ -326,3 +326,25 @@ export interface OrderDetail {
     createdAt: string;
   }>;
 }
+
+export type AftercareAccess = {orderId: string};
+export interface ReturnRequestInput {
+  idempotencyKey: string;
+  reason: string;
+  originalPackaging: boolean;
+  conditionsAccepted: boolean;
+  items: Array<{orderItemId: string; quantity: number}>;
+}
+export interface StorefrontPolicy {returnWindowDays:number;refundDueDays:number;returnAddress:string;returnsEnabled:boolean;automaticCancellationEnabled:boolean}
+export interface OrderAftercare {
+  policy?:StorefrontPolicy;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  cancellationReason: string | null;
+  returnDeadline: string;
+  canRequestReturn: boolean;
+  returnAddress: string;
+  items: Array<{orderItemId: string;sku: string;name: string;variantName: string|null;quantityShipped: number;returnableQuantity: number}>;
+  requests: Array<{policy?:StorefrontPolicy;refundDecision:string;refundNote:string|null;id: string;status: string;reason: string;items: Array<{orderItemId:string;quantity:number}>;rejectionReason: string|null;createdAt: string;return: {returnNumber:string;status:string;labelUrl:string|null;trackingNumber:string|null;receivedAt:string|null}|null}>;
+}

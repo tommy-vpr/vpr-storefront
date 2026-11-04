@@ -6,6 +6,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { friendlyStatus } from "@/components/order-status-card";
 import { tryGetAuthedClient } from "@/lib/wms/session";
 import { WmsError } from "@/lib/wms/client";
+import { OrderAftercareControls } from "@/components/order-aftercare-controls";
 import { formatPrice } from "@/lib/format";
 
 /**
@@ -205,6 +206,8 @@ export default async function OrderDetailPage({
           </div>
         </div>
       </div>
+
+      <OrderAftercareControls key={id} access={{ orderId: id }} />
 
       {/* Addresses */}
       <div className="mt-6 grid gap-4 sm:grid-cols-2">

@@ -11,6 +11,9 @@
  */
 
 import type {
+  AftercareAccess,
+  OrderAftercare,
+  ReturnRequestInput,
   AuthResponse,
   Collection,
   CollectionMeta,
@@ -212,6 +215,21 @@ export function wmsClient(token?: string | null) {
       return { products: res.products, pageInfo };
     },
 
+    getOrderAftercare(access: AftercareAccess): Promise<OrderAftercare> {
+      return request('/storefront/orders/aftercare/details', {...base, method:'POST', body:access, cache:'no-store'});
+    },
+    cancelOrder(access: AftercareAccess, reason: string): Promise<{cancelled:boolean;paymentReview:boolean}> {
+      return request('/storefront/orders/aftercare/cancel', {...base, method:'POST', body:{...access,reason}, cache:'no-store'});
+    },
+    requestReturn(access: AftercareAccess, input: ReturnRequestInput): Promise<{id:string;status:string}> {
+      return request('/storefront/orders/aftercare/returns', {...base, method:'POST', body:{...access,...input}, cache:'no-store'});
+    },
+    getReturnPackingSlip(access: AftercareAccess, requestId: string): Promise<{filename:string;contentType:string;base64:string}> {
+      return request('/storefront/orders/aftercare/return-packing-slip', {...base, method:'POST', body:{...access,requestId}, cache:'no-store'});
+    },
+    saveReturnTracking(access: AftercareAccess, input: {requestId:string;trackingNumber:string;carrier:'ups'|'usps'|'fedex'}): Promise<{saved:boolean}> {
+      return request('/storefront/orders/aftercare/return-tracking', {...base, method:'POST', body:{...access,...input}, cache:'no-store'});
+    },
     getProduct(variantId: string): Promise<{ product: ProductDetail }> {
       return request(`/storefront/products/${variantId}`, {
         ...base,
