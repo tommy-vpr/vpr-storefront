@@ -9,6 +9,8 @@
  *     sourceKey so re-runs never duplicate)
  *  3. Site → Site settings + Site → Homepage filled with the shipped content, pointing at
  *     those Media records — create-only per field: a value an editor already set is kept.
+ *  4. Site → Navigation seeded with the current header (brand menus + IJoy / Wholesale App /
+ *     Merch / Contact) when it is empty.
  *
  * Idempotent: run it as often as you like, locally or against prod.
  */
@@ -140,6 +142,28 @@ async function seedHomepage(payload: Payload) {
   if (!collections.docs.length) console.log('  (no Store → Collections yet — run again after a WMS sync to attach showcase tiles)')
 }
 
+/** Site → Navigation: the current header as editable rows (only when the list is empty). */
+async function seedNavigation(payload: Payload) {
+  const nav = await payload.findGlobal({ slug: 'navigation', depth: 0 })
+  if (nav.mainMenu?.length) return console.log('navigation: already has rows, left alone')
+  const collections = await payload.find({ collection: 'wms-collections', pagination: false, depth: 0, overrideAccess: true })
+  const idBySlug = new Map(collections.docs.map((c) => [c.slug, c.id]))
+  const collectionOrPath = (label: string, slug: string) => {
+    const id = idBySlug.get(slug)
+    return id ? { label, linkType: 'collection' as const, collection: id } : { label, linkType: 'path' as const, path: `/collections/${slug}` }
+  }
+  const mainMenu = [
+    { label: 'Brands', linkType: 'brands' as const },
+    collectionOrPath('IJoy', 'skwezed-ijoy'),
+    { label: 'Wholesale App', linkType: 'path' as const, path: '/wholesale-application' },
+    collectionOrPath('Merch', 'skwezed-merch'),
+    { label: 'Contact', linkType: 'path' as const, path: '/contact' },
+  ]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await payload.updateGlobal({ slug: 'navigation', data: { mainMenu } as any })
+  console.log(`navigation: seeded ${mainMenu.length} header rows (automatic brand menus + IJoy, Wholesale App, Merch, Contact)`)
+}
+
 async function main() {
   console.log('seeding Payload …')
   const payload = await getPayload({ config })
@@ -148,6 +172,7 @@ async function main() {
   await syncCatalogue(payload)
   await seedSiteSettings(payload)
   await seedHomepage(payload)
+  await seedNavigation(payload)
   console.log('done')
   process.exit(0)
 }
