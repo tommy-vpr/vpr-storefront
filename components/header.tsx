@@ -14,10 +14,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { logoutAction } from "@/app/actions/logout";
 import { CartIcon } from "./cart-icon";
-import type { Collection } from "@/lib/wms/types";
 import Image from "next/image";
 
-import type { SiteLink } from "@/lib/site-defaults";
+import type { NavItem } from "@/lib/navigation";
 
 interface HeaderProps {
   store: {
@@ -28,21 +27,16 @@ interface HeaderProps {
     name: string | null;
     email: string;
   } | null;
-  collections: Collection[];
   showQuickOrder?: boolean;
   /** Site → Site settings → Brand. */
   logo: { src: string; width: number; height: number; alt: string };
-  /** Site → Site settings → Header: shown after the auto brand menus. */
-  links: SiteLink[];
-  /** Collection slugs the brand grouping leaves out (they are linked explicitly in `links`). */
-  hiddenSlugs: string[];
+  /** Site → Navigation (or the built-in menu), already resolved to links. */
+  menu: NavItem[];
 }
 
-export function Header({ store, customer, collections, showQuickOrder = false, logo, links, hiddenSlugs }: HeaderProps) {
+export function Header({ store, customer, showQuickOrder = false, logo, menu }: HeaderProps) {
   const isAuthed = customer !== null;
   const displayName = customer?.name ?? customer?.email ?? null;
-  const excluded = new Set(hiddenSlugs);
-  const brandGroups = groupByBrand(collections.filter((c) => !excluded.has(c.slug)));
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -52,42 +46,33 @@ export function Header({ store, customer, collections, showQuickOrder = false, l
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
-          {/* Dynamic brand menus from assigned collections */}
-          {Array.from(brandGroups.entries()).map(([brand, cols]) =>
-            cols.length === 1 ? (
-              <Button asChild variant="ghost" size="sm" key={brand}>
-                <Link href={`/collections/${cols[0].slug}`}>{brand}</Link>
-              </Button>
-            ) : (
-              <DropdownMenu key={brand}>
+          {menu.map((item) =>
+            item.children?.length ? (
+              <DropdownMenu key={item.title + item.href}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-1">
-                    {brand}
+                    {item.title}
                     <ChevronDown className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-48">
-                  {cols.map((c) => (
-                    <DropdownMenuItem asChild key={c.id}>
-                      <Link
-                        href={`/collections/${c.slug}`}
-                        className="cursor-pointer w-full"
-                      >
-                        {stripBrandPrefix(c.name, brand)}
-                      </Link>
+                  {item.children.map((c) => (
+                    <DropdownMenuItem asChild key={c.title + c.href}>
+                      {c.external ? (
+                        <a href={c.href} target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full">{c.title}</a>
+                      ) : (
+                        <Link href={c.href} className="cursor-pointer w-full">{c.title}</Link>
+                      )}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+            ) : (
+              <Button asChild variant="ghost" size="sm" key={item.title + item.href}>
+                {item.external ? <a href={item.href} target="_blank" rel="noopener noreferrer">{item.title}</a> : <Link href={item.href}>{item.title}</Link>}
+              </Button>
             ),
           )}
-
-          {/* Extra links (Site → Site settings → Header) */}
-          {links.map((item) => (
-            <Button asChild variant="ghost" size="sm" key={item.label + item.href}>
-              {item.external ? <a href={item.href} target="_blank" rel="noopener noreferrer">{item.label}</a> : <Link href={item.href}>{item.label}</Link>}
-            </Button>
-          ))}
           {showQuickOrder && <Button asChild variant="ghost" size="sm"><Link href="/quick-order">Quick Order</Link></Button>}
         </nav>
 
@@ -149,25 +134,4 @@ export function Header({ store, customer, collections, showQuickOrder = false, l
       </div>
     </header>
   );
-}
-
-// ─── helpers ─────────────────────────────────────────────────────────────
-
-function groupByBrand(collections: Collection[]): Map<string, Collection[]> {
-  const groups = new Map<string, Collection[]>();
-  for (const c of collections) {
-    const brand = c.brand ?? c.name.split(/\s+/)[0] ?? c.name;
-    const existing = groups.get(brand);
-    if (existing) {
-      existing.push(c);
-    } else {
-      groups.set(brand, [c]);
-    }
-  }
-  return groups;
-}
-
-function stripBrandPrefix(name: string, brand: string): string {
-  const prefix = `${brand} `;
-  return name.startsWith(prefix) ? name.slice(prefix.length) : name;
 }

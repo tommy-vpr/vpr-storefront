@@ -6,6 +6,7 @@ import { Footer } from "@/components/footer";
 import WarningLabel from "@/components/warningLabel";
 import { getSiteSettings, DEFAULT_HEADER_HIDDEN_SLUGS } from "@/lib/site-settings";
 import { getCollectionPresentation, presentCollections } from "@/lib/collection-presentation";
+import { getNavigation } from "@/lib/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,13 @@ export default async function ShopLayout({
   const hiddenSlugs = site.headerHiddenCollectionIds.length
     ? [...presentation.values()].filter((p) => site.headerHiddenCollectionIds.includes(p.id)).map((p) => p.slug)
     : DEFAULT_HEADER_HIDDEN_SLUGS;
+  // Site → Navigation, or the built-in menu (brand menus + Site settings header links) while it is empty.
+  const menu = await getNavigation({
+    collections,
+    slugById: new Map([...presentation.values()].map((p) => [p.id, p.slug])),
+    brandHiddenSlugs: hiddenSlugs,
+    fallbackLinks: site.headerLinks,
+  });
 
   return (
     <CartProvider storeSlug={storeRes?.store.slug}>
@@ -73,8 +81,7 @@ export default async function ShopLayout({
         <AnnouceBar enabled={site.announcement.enabled} text={site.announcement.text} href={site.announcement.href} />
         <Header
           logo={site.logo}
-          links={site.headerLinks}
-          hiddenSlugs={hiddenSlugs}
+          menu={menu}
           store={{
             name: store.name,
             logoUrl: store.logoUrl,
@@ -85,7 +92,6 @@ export default async function ShopLayout({
               : null
           }
           showQuickOrder={Boolean(meRes && (meRes.customer.wholesaleAccount ?? storeRes?.store.mode === "WHOLESALE"))}
-          collections={collections}
         />
         <main className="container mx-auto px-4 mb-12">{children}</main>
         <Footer settings={site} />

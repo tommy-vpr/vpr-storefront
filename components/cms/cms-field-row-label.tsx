@@ -13,3 +13,10 @@ export function CmsTitleRowLabel() {
   const t = data?.title || data?.heading || data?.name || data?.label
   return <span>{t ? `${(rowNumber ?? 0) + 1}. ${t}` : `Item ${(rowNumber ?? 0) + 1}`}</span>
 }
+
+/** Navigation rows: "1. Label (collection)". */
+export function CmsNavRowLabel() {
+  const { data, rowNumber } = useRowLabel<{ label?: string; linkType?: string }>()
+  const n = (rowNumber ?? 0) + 1
+  return <span>{data?.label ? `${n}. ${data.label}${data.linkType && data.linkType !== 'path' ? ` (${data.linkType})` : ''}` : data?.linkType === 'brands' ? `${n}. Automatic brand menus` : `Item ${n}`}</span>
+}

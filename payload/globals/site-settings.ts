@@ -48,8 +48,8 @@ export const SiteSettings: GlobalConfig = {
         {
           label: 'Header',
           fields: [
-            { name: 'headerHiddenCollections', label: 'Collections hidden from the brand menus', type: 'relationship', relationTo: 'wms-collections', hasMany: true, admin: { description: 'The header groups collections by brand automatically; pick any that should not appear there (default: Skwezed x iJoy, Merch — they are linked elsewhere).' } },
-            linkList('headerLinks', 'Extra header links', 'Shown after the brand menus. Default: IJoy, Wholesale App, Merch, Contact.'),
+            { name: 'headerHiddenCollections', label: 'Collections hidden from the brand menus', type: 'relationship', relationTo: 'wms-collections', hasMany: true, admin: { description: 'The automatic brand menus (built-in menu, or a "brands" row in Navigation) group collections by brand; pick any that should not appear there (default: Skwezed x iJoy, Merch — they are linked elsewhere).' } },
+            linkList('headerLinks', 'Extra header links (built-in menu only)', 'Used while Site → Navigation is empty: shown after the automatic brand menus. Default: IJoy, Wholesale App, Merch, Contact.'),
           ],
         },
         {

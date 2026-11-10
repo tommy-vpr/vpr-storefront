@@ -98,10 +98,12 @@ export interface Config {
   };
   fallbackLocale: null;
   globals: {
+    navigation: Navigation;
     homepage: Homepage;
     'site-settings': SiteSetting;
   };
   globalsSelect: {
+    navigation: NavigationSelect<false> | NavigationSelect<true>;
     homepage: HomepageSelect<false> | HomepageSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
   };
@@ -670,6 +672,52 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   createdAt?: T;
 }
 /**
+ * Header menu. Leave the list empty to use the built-in menu (automatic brand menus + Site settings → Header links). A row of type "Automatic brand menus" drops those brand dropdowns wherever you place it.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation".
+ */
+export interface Navigation {
+  id: number;
+  /**
+   * Top-level items; add "Dropdown items" for a submenu (one level).
+   */
+  mainMenu?:
+    | {
+        label: string;
+        linkType: 'collection' | 'collections' | 'path' | 'url' | 'brands';
+        collection?: (number | null) | WmsCollection;
+        /**
+         * Hand-built pages: /all-collections, /quick-order, /wholesale-application, /partnership-support, /shipping-returns, /terms, /contact, /orders/lookup
+         */
+        path?: string | null;
+        /**
+         * https://…
+         */
+        url?: string | null;
+        children?:
+          | {
+              label: string;
+              linkType: 'collection' | 'collections' | 'path' | 'url';
+              collection?: (number | null) | WmsCollection;
+              /**
+               * Hand-built pages: /all-collections, /quick-order, /wholesale-application, /partnership-support, /shipping-returns, /terms, /contact, /orders/lookup
+               */
+              path?: string | null;
+              /**
+               * https://…
+               */
+              url?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * Everything on the home page, top to bottom. Empty lists use the built-in defaults.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -794,11 +842,11 @@ export interface SiteSetting {
   warningLine1?: string | null;
   warningLine2?: string | null;
   /**
-   * The header groups collections by brand automatically; pick any that should not appear there (default: Skwezed x iJoy, Merch — they are linked elsewhere).
+   * The automatic brand menus (built-in menu, or a "brands" row in Navigation) group collections by brand; pick any that should not appear there (default: Skwezed x iJoy, Merch — they are linked elsewhere).
    */
   headerHiddenCollections?: (number | WmsCollection)[] | null;
   /**
-   * Shown after the brand menus. Default: IJoy, Wholesale App, Merch, Contact.
+   * Used while Site → Navigation is empty: shown after the automatic brand menus. Default: IJoy, Wholesale App, Merch, Contact.
    */
   headerLinks?:
     | {
@@ -852,6 +900,35 @@ export interface SiteSetting {
   newsletterFormUrl?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation_select".
+ */
+export interface NavigationSelect<T extends boolean = true> {
+  mainMenu?:
+    | T
+    | {
+        label?: T;
+        linkType?: T;
+        collection?: T;
+        path?: T;
+        url?: T;
+        children?:
+          | T
+          | {
+              label?: T;
+              linkType?: T;
+              collection?: T;
+              path?: T;
+              url?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
