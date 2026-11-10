@@ -66,7 +66,8 @@ export default buildConfig({
           type: 'upload',
           relationTo: 'media',
           filterOptions: { mimeType: { contains: 'image/' } },
-          admin: { description: 'Shown in the admin header. Upload or pick an image, then save; clear it to go back to the default icon.' },
+          // Hidden on create-first-user: the media browser needs a signed-in user, and there is none yet.
+          admin: { condition: (data) => Boolean(data?.id), description: 'Shown in the admin header. Upload or pick an image, then save; clear it to go back to the default icon.' },
         },
       ],
     },
