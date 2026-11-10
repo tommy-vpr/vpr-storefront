@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Phone, Clock, Mail, ChevronDown } from "lucide-react";
-import type { SiteSettings } from "@/lib/site-settings";
+import type { SiteSettings } from "@/lib/site-defaults";
 
 function LinkItem({
   href,

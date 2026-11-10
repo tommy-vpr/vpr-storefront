@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import type { QuickLinkTile } from "@/lib/homepage";
+import type { QuickLinkTile } from "@/lib/homepage-defaults";
 
 /** Site → Homepage → Quick links. */
 export function QuickLinks({ items }: { items: QuickLinkTile[] }) {

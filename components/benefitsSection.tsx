@@ -1,7 +1,7 @@
 import { Clock, CreditCard, Package, RotateCcw, ShieldCheck, Star, Truck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import type { Benefit, BenefitIcon } from "@/lib/homepage";
+import type { Benefit, BenefitIcon } from "@/lib/homepage-defaults";
 
 const ICONS: Record<BenefitIcon, LucideIcon> = { truck: Truck, rotate: RotateCcw, card: CreditCard, shield: ShieldCheck, clock: Clock, star: Star, package: Package };
 

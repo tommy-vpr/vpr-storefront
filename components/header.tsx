@@ -17,7 +17,7 @@ import { CartIcon } from "./cart-icon";
 import type { Collection } from "@/lib/wms/types";
 import Image from "next/image";
 
-import type { SiteLink } from "@/lib/site-settings";
+import type { SiteLink } from "@/lib/site-defaults";
 
 interface HeaderProps {
   store: {

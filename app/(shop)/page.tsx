@@ -10,18 +10,19 @@ import { getCollectionPresentation, presentCollections } from "@/lib/collection-
 
 /** Site → Homepage drives every section; each falls back to the built-in content when empty. */
 export default async function ShopHomePage() {
-  const [{ collections: live }, home, presentation] = await Promise.all([
-    getClient().getCollections(),
+  const [collectionsRes, home, presentation] = await Promise.all([
+    // A WMS blip costs the showcase, not the homepage.
+    getClient().getCollections().catch((err) => { console.error("[home] getCollections failed", err); return null; }),
     getHomepage(),
     getCollectionPresentation(),
   ]);
-  const collections = await presentCollections(live);
+  const collections = await presentCollections(collectionsRes?.collections ?? []);
 
   // Showcase rows reference Store → Collections by record id; the storefront works in slugs.
   const slugById = new Map([...presentation.values()].map((p) => [p.id, p.slug]));
   const imageBySlug: Record<string, string> = {};
-  for (const [id, src] of home.showcase.imageByCollectionId) {
-    const slug = slugById.get(id);
+  for (const [id, src] of Object.entries(home.showcase.imageByCollectionId)) {
+    const slug = slugById.get(Number(id));
     if (slug) imageBySlug[slug] = src;
   }
   const hiddenSlugs = home.showcase.hiddenCollectionIds.length

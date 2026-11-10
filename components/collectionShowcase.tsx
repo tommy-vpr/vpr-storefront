@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { DEFAULT_SHOWCASE_IMAGES } from "@/lib/homepage";
+import { DEFAULT_SHOWCASE_IMAGES } from "@/lib/homepage-defaults";
 
 type Collection = {
   id: string;
