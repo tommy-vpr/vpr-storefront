@@ -3,6 +3,11 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
 import { sendOrderShippedEmail, sendOrderCancelledEmail } from "@/lib/email";
+import { getPayload } from "payload";
+import { revalidateTag } from "next/cache";
+import config from "@payload-config";
+import { syncWmsCatalog } from "@/lib/wms-catalog-sync";
+import { CMS_CONTENT_TAG, WMS_CATALOG_TAG } from "@/lib/storefront-cache-policy";
 
 /**
  * WMS → storefront webhook receiver.
@@ -120,6 +125,22 @@ export async function POST(request: Request) {
   if (envelope.storeId !== process.env.WMS_STORE_ID) {
     console.warn(`[wms-webhook] wrong store: ${envelope.storeId}`);
     return NextResponse.json({ error: "wrong_store" }, { status: 401 });
+  }
+
+  // ── Catalog changes: re-mirror collections/products into Payload ─────────
+  // Idempotent by nature (sync is a full snapshot under an advisory lock), so
+  // it skips the processed-event claim and simply re-runs on redelivery.
+  if (envelope.eventType === "catalog.changed") {
+    try {
+      const payload = await getPayload({ config, cron: true });
+      const sync = await syncWmsCatalog(payload);
+      revalidateTag(CMS_CONTENT_TAG, { expire: 0 });
+      revalidateTag(WMS_CATALOG_TAG, { expire: 0 });
+      return NextResponse.json({ received: true, sync });
+    } catch (error) {
+      console.error("[wms-webhook] catalog sync failed", error);
+      return NextResponse.json({ error: "catalog_sync_failed" }, { status: 503 });
+    }
   }
 
   // ── Claim the event ───────────────────────────────────────────────────────

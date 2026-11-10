@@ -1,33 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 
-// Edit these to customize the quick-link tiles shown on the home page.
-const LINKS: {
-  label: string;
-  src: string;
-  href: string;
-}[] = [
-  {
-    label: "Quick Order",
-    src: "/images/ql_quick_order.webp",
-    href: "/quick-order",
-  },
-  {
-    label: "Sample Request",
-    src: "/images/ql_sample_request.webp",
-    href: "/sample-request",
-  },
-  {
-    label: "Wholesale",
-    src: "/images/ql_wholesale.webp",
-    href: "/wholesale-application",
-  },
-];
+import type { QuickLinkTile } from "@/lib/homepage";
 
-export function QuickLinks() {
+/** Site → Homepage → Quick links. */
+export function QuickLinks({ items }: { items: QuickLinkTile[] }) {
+  if (!items.length) return null;
   return (
     <section className="my-24 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {LINKS.map((link) => (
+      {items.map((link) => (
         <Link
           key={link.label}
           href={link.href}

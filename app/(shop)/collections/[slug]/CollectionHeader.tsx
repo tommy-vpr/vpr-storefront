@@ -5,6 +5,7 @@ import { CollectionBanner } from "@/components/collection-banner";
 import { FullBleed } from "@/components/full-bleed";
 import { WmsError } from "@/lib/wms/client";
 import { getClient } from "@/lib/wms/session";
+import { getCollectionPresentation, isCollectionHidden, presentCollection } from "@/lib/collection-presentation";
 
 /**
  * Collection metadata: title, description, product count.
@@ -16,6 +17,8 @@ import { getClient } from "@/lib/wms/session";
  * Owns the 404: an unknown slug should not render a shell.
  */
 export async function CollectionHeader({ slug }: { slug: string }) {
+  // Store → Collections can hide a collection without touching WMS.
+  if (await isCollectionHidden(slug)) notFound();
   let data;
   try {
     data = await getClient().getCollection(slug);
@@ -24,7 +27,7 @@ export async function CollectionHeader({ slug }: { slug: string }) {
     throw err;
   }
 
-  const { collection } = data;
+  const collection = presentCollection(data.collection, (await getCollectionPresentation()).get(slug));
   // Prefer the metadata field once the WMS returns it; fall back to `total`.
   const count = collection.productCount ?? data.total;
 

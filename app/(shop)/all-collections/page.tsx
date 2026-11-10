@@ -1,12 +1,10 @@
 import { CollectionCard } from "@/components/collection-card";
 import { getClient } from "@/lib/wms/session";
+import { presentCollections } from "@/lib/collection-presentation";
 import React from "react";
 
 const page = async () => {
-  const [{ store }, { collections }] = await Promise.all([
-    getClient().getStore(),
-    getClient().getCollections(),
-  ]);
+  const collections = await presentCollections((await getClient().getCollections()).collections);
 
   return (
     <section

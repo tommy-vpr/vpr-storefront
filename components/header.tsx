@@ -17,21 +17,7 @@ import { CartIcon } from "./cart-icon";
 import type { Collection } from "@/lib/wms/types";
 import Image from "next/image";
 
-// ─── Edit these to customize the nav ─────────────────────────────────────
-// Brand placeholders: shown alongside the real brand menus. Remove a brand
-// from here once you have collections assigned for it (the auto-grouping
-// will pick them up).
-const BRAND_PLACEHOLDERS: { label: string; href: string }[] = [
-  { label: "IJoy", href: "/collections/skwezed-ijoy" },
-];
-
-// Static utility links. Point to real pages once they exist.
-const UTILITY_LINKS: { label: string; href: string }[] = [
-  { label: "Wholesale App", href: "/wholesale-application" },
-  { label: "Merch", href: "/collections/skwezed-merch" },
-  { label: "Contact", href: "/contact" },
-];
-// ─────────────────────────────────────────────────────────────────────────
+import type { SiteLink } from "@/lib/site-settings";
 
 interface HeaderProps {
   store: {
@@ -44,28 +30,25 @@ interface HeaderProps {
   } | null;
   collections: Collection[];
   showQuickOrder?: boolean;
+  /** Site → Site settings → Brand. */
+  logo: { src: string; width: number; height: number; alt: string };
+  /** Site → Site settings → Header: shown after the auto brand menus. */
+  links: SiteLink[];
+  /** Collection slugs the brand grouping leaves out (they are linked explicitly in `links`). */
+  hiddenSlugs: string[];
 }
 
-export function Header({ store, customer, collections, showQuickOrder = false }: HeaderProps) {
+export function Header({ store, customer, collections, showQuickOrder = false, logo, links, hiddenSlugs }: HeaderProps) {
   const isAuthed = customer !== null;
   const displayName = customer?.name ?? customer?.email ?? null;
-  const NAV_EXCLUDED_SLUGS = new Set(["skwezed-ijoy", "skwezed-merch"]);
-  const brandGroups = groupByBrand(
-    collections.filter((c) => !NAV_EXCLUDED_SLUGS.has(c.slug)),
-  );
-
-  console.log(brandGroups);
+  const excluded = new Set(hiddenSlugs);
+  const brandGroups = groupByBrand(collections.filter((c) => !excluded.has(c.slug)));
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div className="container p-2 mx-auto flex h-16 items-center justify-between gap-4 px-4">
         <Link href="/" className="flex items-center gap-2">
-          <Image
-            src={"/images/logo-main.png"}
-            alt="vpr collection"
-            width={150}
-            height={100}
-          />
+          <Image src={logo.src} alt={logo.alt || store.name} width={logo.width} height={logo.height} priority style={{ width: logo.width, height: "auto" }} />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
@@ -99,17 +82,10 @@ export function Header({ store, customer, collections, showQuickOrder = false }:
             ),
           )}
 
-          {/* Placeholder brands (edit BRAND_PLACEHOLDERS above) */}
-          {BRAND_PLACEHOLDERS.map((item) => (
-            <Button asChild variant="ghost" size="sm" key={item.label}>
-              <Link href={item.href}>{item.label}</Link>
-            </Button>
-          ))}
-
-          {/* Utility links (edit UTILITY_LINKS above) */}
-          {UTILITY_LINKS.map((item) => (
-            <Button asChild variant="ghost" size="sm" key={item.href}>
-              <Link href={item.href}>{item.label}</Link>
+          {/* Extra links (Site → Site settings → Header) */}
+          {links.map((item) => (
+            <Button asChild variant="ghost" size="sm" key={item.label + item.href}>
+              {item.external ? <a href={item.href} target="_blank" rel="noopener noreferrer">{item.label}</a> : <Link href={item.href}>{item.label}</Link>}
             </Button>
           ))}
           {showQuickOrder && <Button asChild variant="ghost" size="sm"><Link href="/quick-order">Quick Order</Link></Button>}

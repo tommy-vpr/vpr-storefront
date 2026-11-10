@@ -24,7 +24,10 @@ export const AnimatedTestimonials = ({
   autoplay?: boolean;
 }) => {
   const [active, setActive] = useState(0);
-  const activeBg = testimonials[active]?.bgColor;
+  // bgColor is a Tailwind class ("bg-green-500") in code and a CSS colour ("#22c55e") from the CMS.
+  const rawBg = testimonials[active]?.bgColor;
+  const activeBg = rawBg?.startsWith("bg-") ? rawBg : undefined;
+  const activeBgStyle = rawBg && !rawBg.startsWith("bg-") ? { backgroundColor: rawBg } : undefined;
   const isDark = testimonials[active]?.darkBg ?? false;
 
   const handleNext = () => {
@@ -67,6 +70,7 @@ export const AnimatedTestimonials = ({
         "w-full px-4 py-20 font-sans antialiased transition-colors duration-500 md:px-8 lg:px-12",
         activeBg,
       )}
+      style={activeBgStyle}
     >
       {/* Inner: centered content */}
       <div className="mx-auto max-w-sm md:max-w-4xl">

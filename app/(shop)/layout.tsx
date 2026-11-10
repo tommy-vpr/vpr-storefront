@@ -1,10 +1,11 @@
 import { getClient, tryGetAuthedClient } from "@/lib/wms/session";
 import { CartProvider } from "@/components/cart-provider";
 import { Header } from "@/components/header";
-import Hero from "@/components/hero";
 import AnnouceBar from "@/components/announceBar";
 import { Footer } from "@/components/footer";
 import WarningLabel from "@/components/warningLabel";
+import { getSiteSettings, DEFAULT_HEADER_HIDDEN_SLUGS } from "@/lib/site-settings";
+import { getCollectionPresentation, presentCollections } from "@/lib/collection-presentation";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export default async function ShopLayout({
   // Customer is optional — present only if there's a valid session.
   // Collections feed the nav brand menus.
   const authed = await tryGetAuthedClient();
-  const [storeRes, meRes, collectionsRes] = await Promise.all([
+  const [storeRes, meRes, collectionsRes, site, presentation] = await Promise.all([
     getClient()
       .getStore()
       .catch((err) => {
@@ -53,17 +54,27 @@ export default async function ShopLayout({
         console.error("[shop/layout] getCollections failed", err);
         return null;
       }),
+    getSiteSettings(),
+    getCollectionPresentation(),
   ]);
 
   const store = storeRes?.store ?? FALLBACK_STORE;
-  const collections = collectionsRes?.collections ?? [];
+  // Store → Collections: hidden / renamed / reordered in the CMS; menu-only ones feed the nav.
+  const collections = await presentCollections(collectionsRes?.collections ?? [], { menuOnly: true });
+  // Site settings → Header lists collections to keep out of the brand menus (by record id → slug).
+  const hiddenSlugs = site.headerHiddenCollectionIds.length
+    ? [...presentation.values()].filter((p) => site.headerHiddenCollectionIds.includes(p.id)).map((p) => p.slug)
+    : DEFAULT_HEADER_HIDDEN_SLUGS;
 
   return (
     <CartProvider storeSlug={storeRes?.store.slug}>
       <div className="flex min-h-screen flex-col">
-        <WarningLabel />
-        <AnnouceBar />
+        <WarningLabel enabled={site.warning.enabled} line1={site.warning.line1} line2={site.warning.line2} />
+        <AnnouceBar enabled={site.announcement.enabled} text={site.announcement.text} href={site.announcement.href} />
         <Header
+          logo={site.logo}
+          links={site.headerLinks}
+          hiddenSlugs={hiddenSlugs}
           store={{
             name: store.name,
             logoUrl: store.logoUrl,
@@ -76,10 +87,8 @@ export default async function ShopLayout({
           showQuickOrder={Boolean(meRes && (meRes.customer.wholesaleAccount ?? storeRes?.store.mode === "WHOLESALE"))}
           collections={collections}
         />
-        {/* Hero */}
-
         <main className="container mx-auto px-4 mb-12">{children}</main>
-        <Footer />
+        <Footer settings={site} />
       </div>
     </CartProvider>
   );

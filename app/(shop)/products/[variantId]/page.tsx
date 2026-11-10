@@ -6,6 +6,9 @@ import { getCatalogClient, getClient, isLoggedIn } from "@/lib/wms/session";
 import { WmsError } from "@/lib/wms/client";
 import { formatPrice } from "@/lib/format";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { ProductGallery } from "@/components/product-gallery";
+import { contentImageURL, getProductContent } from "@/lib/product-content";
+import { productGalleryImages } from "@/lib/product-gallery";
 
 /**
  * Per-customer prices — this page must be rendered per request, not built
@@ -27,8 +30,6 @@ export default async function ProductPage({
 }) {
   const { variantId } = await params;
   const { from } = await searchParams;
-
-  console.log("FROM:***", from);
 
   let product;
   try {
@@ -57,6 +58,16 @@ export default async function ProductPage({
   // therefore nothing to add to a cart — an unpriced cart would check out at
   // list, which is worse than refusing. Products stay browsable either way.
   const pricesHidden = store.mode === "WHOLESALE" && !loggedIn;
+
+  // Editorial layer from Payload (Store → All products): curated gallery and an optional
+  // description override. WMS stays the source for price/stock/variants.
+  const content = await getProductContent(product.productId);
+  const description = content?.description?.trim() || product.description?.trim();
+  const galleryImages = productGalleryImages(
+    product.imageUrl,
+    (content?.images ?? []).map((item) => contentImageURL(item.image)),
+    product.variants.map((variant) => variant.imageUrl),
+  );
 
   // On a wholesale store a signed-in buyer orders ACROSS the strengths, not
   // one of them — so the picker and single add-to-cart are replaced by a
@@ -92,20 +103,7 @@ export default async function ProductPage({
       />
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12">
-        <div className="aspect-square overflow-hidden rounded-lg border bg-muted flex items-center justify-center">
-          {product.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={product.imageUrl}
-              alt={product.name}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-              No image
-            </div>
-          )}
-        </div>
+        <ProductGallery images={galleryImages} title={product.name} />
 
         <div className="flex flex-col">
           {product.brand && (
@@ -208,13 +206,13 @@ export default async function ProductPage({
               buyer working through several products needs one number. */}
           {bulkVariants && <CartSummaryBar />}
 
-          {product.description && (
+          {description && (
             <>
               <Separator className="my-6" />
               <div className="space-y-2">
                 <h2 className="text-sm font-medium">Description</h2>
                 <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                  {product.description}
+                  {description}
                 </p>
               </div>
             </>
