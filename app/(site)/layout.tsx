@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getClient } from "@/lib/wms/session";
-import "./globals.css";
+import "../globals.css";
 import { Geist } from "next/font/google";
 import WarningLabel from "@/components/warningLabel";
 
