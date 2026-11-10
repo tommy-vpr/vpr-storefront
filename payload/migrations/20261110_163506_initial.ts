@@ -1,6 +1,8 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
+  // Fresh project: Payload's tables live in their own schema, which nothing else creates.
+  await db.execute(sql`CREATE SCHEMA IF NOT EXISTS "payload";`)
   await db.execute(sql`
    CREATE TYPE "payload"."enum_products_assignment_status" AS ENUM('unknown', 'assigned', 'unassigned');
   CREATE TYPE "payload"."enum_products_wms_image_import_status" AS ENUM('pending', 'complete', 'failed', 'no-image', 'protected');
