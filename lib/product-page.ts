@@ -96,6 +96,24 @@ export async function getRelatedProducts(args: RelatedArgs): Promise<ProductList
     for (const list of lists) for (const item of list) byId.set(item.productId, item)
     push(args.picks.map((id) => byId.get(id)).filter((x): x is ProductListItem => Boolean(x)))
   }
-  if (args.source !== 'fixed' || args.fixedCollectionSlug) for (const list of lists) push(list)
+  if (args.source !== 'fixed' || args.fixedCollectionSlug) for (const list of lists) push(rotateAround(list, args.productId))
   return out
+}
+
+/**
+ * Start the fill from the product's own position in the listing and wrap around, so every
+ * product recommends its neighbours instead of the same first N of the collection. When the
+ * product is not in the list (fixed collection), start from a stable offset derived from its id
+ * so different products still spread across the collection.
+ */
+function rotateAround(list: ProductListItem[], productId: string): ProductListItem[] {
+  if (list.length < 2) return list
+  let i = list.findIndex((p) => p.productId === productId)
+  if (i < 0) {
+    let h = 0
+    for (const ch of productId) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+    i = (h % list.length) - 1
+  }
+  const start = (i + 1 + list.length) % list.length
+  return [...list.slice(start), ...list.slice(0, start)]
 }
