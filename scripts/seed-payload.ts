@@ -164,6 +164,24 @@ async function seedNavigation(payload: Payload) {
   console.log(`navigation: seeded ${mainMenu.length} header rows (automatic brand menus + IJoy, Wholesale App, Merch, Contact)`)
 }
 
+/** Site → Product page template: the default stack, only when the global has never been saved. */
+async function seedProductPage(payload: Payload) {
+  const doc = await payload.findGlobal({ slug: 'product-page', depth: 0 })
+  if (doc.sections?.length) return console.log('product-page: already has sections, left alone')
+  await payload.updateGlobal({
+    slug: 'product-page',
+    data: {
+      sections: [
+        { blockType: 'productHero', showBrand: true, showBreadcrumbs: true },
+        { blockType: 'productDescription', heading: 'Description' },
+        { blockType: 'productDetails', showSku: true, showCategory: true },
+        { blockType: 'relatedProducts', heading: 'You may also like', source: 'auto', limit: 4 },
+      ],
+    },
+  })
+  console.log('product-page: seeded the default section stack')
+}
+
 async function main() {
   console.log('seeding Payload …')
   const payload = await getPayload({ config })
@@ -173,6 +191,7 @@ async function main() {
   await seedSiteSettings(payload)
   await seedHomepage(payload)
   await seedNavigation(payload)
+  await seedProductPage(payload)
   console.log('done')
   process.exit(0)
 }

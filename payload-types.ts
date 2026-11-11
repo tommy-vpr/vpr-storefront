@@ -100,11 +100,13 @@ export interface Config {
   globals: {
     navigation: Navigation;
     homepage: Homepage;
+    'product-page': ProductPage;
     'site-settings': SiteSetting;
   };
   globalsSelect: {
     navigation: NavigationSelect<false> | NavigationSelect<true>;
     homepage: HomepageSelect<false> | HomepageSelect<true>;
+    'product-page': ProductPageSelect<false> | ProductPageSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
   };
   locale: null;
@@ -812,6 +814,80 @@ export interface Homepage {
   createdAt?: string | null;
 }
 /**
+ * Sections of every shop product page (/products/<id>). Starts with hero → description → details → you may also like. Per-product related picks are on Store → All products.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-page".
+ */
+export interface ProductPage {
+  id: number;
+  sections?:
+    | (
+        | {
+            /**
+             * Small brand line above the title.
+             */
+            showBrand?: boolean | null;
+            showBreadcrumbs?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'productHero';
+          }
+        | {
+            heading?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'productDescription';
+          }
+        | {
+            showSku?: boolean | null;
+            showCategory?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'productDetails';
+          }
+        | {
+            heading?: string | null;
+            source: 'auto' | 'collection' | 'fixed';
+            collection?: (number | null) | WmsCollection;
+            limit?: number | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'relatedProducts';
+          }
+        | {
+            heading?: string | null;
+            content: {
+              root: {
+                type: string;
+                children: {
+                  type: any;
+                  version: number;
+                  [k: string]: unknown;
+                }[];
+                direction: ('ltr' | 'rtl') | null;
+                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                indent: number;
+                version: number;
+              };
+              [k: string]: unknown;
+            };
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'richText';
+          }
+        | {
+            html: string;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'embed';
+          }
+      )[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * Logo, announcement bar, warning label, header links, footer columns and third-party ids. Leave a field empty to use the built-in default.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -984,6 +1060,67 @@ export interface HomepageSelect<T extends boolean = true> {
         bgColor?: T;
         darkBg?: T;
         id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-page_select".
+ */
+export interface ProductPageSelect<T extends boolean = true> {
+  sections?:
+    | T
+    | {
+        productHero?:
+          | T
+          | {
+              showBrand?: T;
+              showBreadcrumbs?: T;
+              id?: T;
+              blockName?: T;
+            };
+        productDescription?:
+          | T
+          | {
+              heading?: T;
+              id?: T;
+              blockName?: T;
+            };
+        productDetails?:
+          | T
+          | {
+              showSku?: T;
+              showCategory?: T;
+              id?: T;
+              blockName?: T;
+            };
+        relatedProducts?:
+          | T
+          | {
+              heading?: T;
+              source?: T;
+              collection?: T;
+              limit?: T;
+              id?: T;
+              blockName?: T;
+            };
+        richText?:
+          | T
+          | {
+              heading?: T;
+              content?: T;
+              id?: T;
+              blockName?: T;
+            };
+        embed?:
+          | T
+          | {
+              html?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;

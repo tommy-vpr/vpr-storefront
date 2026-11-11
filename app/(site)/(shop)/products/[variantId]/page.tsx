@@ -9,6 +9,10 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductGallery } from "@/components/product-gallery";
 import { contentImageURL, getProductContent } from "@/lib/product-content";
 import { productGalleryImages } from "@/lib/product-gallery";
+import { getProductPageSections, getRelatedProducts } from "@/lib/product-page";
+import { collectionSlugsFromRefs } from "@/lib/collection-presentation";
+import { ProductCard } from "@/components/product-card";
+import { convertLexicalToHTML } from "@payloadcms/richtext-lexical/html";
 
 /**
  * Per-customer prices — this page must be rendered per request, not built
@@ -61,8 +65,11 @@ export default async function ProductPage({
 
   // Editorial layer from Payload (Store → All products): curated gallery and an optional
   // description override. WMS stays the source for price/stock/variants.
-  const content = await getProductContent(product.productId);
+  const [content, sections] = await Promise.all([getProductContent(product.productId), getProductPageSections()]);
   const description = content?.description?.trim() || product.description?.trim();
+  const heroSection = sections.find((b) => b.blockType === "productHero");
+  const showBrand = heroSection?.blockType === "productHero" ? heroSection.showBrand !== false : true;
+  const showBreadcrumbs = heroSection?.blockType === "productHero" ? heroSection.showBreadcrumbs !== false : true;
   const galleryImages = productGalleryImages(
     product.imageUrl,
     (content?.images ?? []).map((item) => contentImageURL(item.image)),
@@ -81,32 +88,111 @@ export default async function ProductPage({
   // sellingPrice NOT NULL), so this is a display of that rule, not the rule.
   const canAddToCart = !pricesHidden && product.price !== null;
 
-  return (
-    <div className="min-h-[70vh] max-w-7xl mx-auto mt-6 sm:mt-12">
-      {/* The product itself doesn't know which collections it belongs to, so
-          the middle crumb comes from ?from= — set by the collection grid when
-          you click through. Arriving from a search result or a shared link
-          simply gets the shorter trail rather than a guessed one. */}
-      <Breadcrumbs
-        items={[
-          { label: "Home", href: "/" },
-          ...(fromCollection
-            ? [
-                {
-                  label: fromCollection.name,
-                  href: `/collections/${fromCollection.slug}`,
-                },
-              ]
-            : [{ label: "Collections", href: "/all-collections" }]),
-          { label: product.name },
-        ]}
-      />
+  const infoNodes: React.ReactNode[] = [];
+  const HERO = Symbol("hero");
+  const nodes: (React.ReactNode | typeof HERO)[] = [];
+  for (const [i, b] of sections.entries()) {
+    const key = `${b.blockType}-${b.id ?? i}`;
+    switch (b.blockType) {
+      case "productHero":
+        nodes.push(HERO);
+        break;
+      case "productDescription":
+        if (description)
+          infoNodes.push(
+            <div key={key}>
+              <Separator className="my-6" />
+              <div className="space-y-2">
+                <h2 className="text-sm font-medium">{b.heading || "Description"}</h2>
+                <p className="whitespace-pre-wrap text-sm text-muted-foreground">{description}</p>
+              </div>
+            </div>,
+          );
+        break;
+      case "productDetails":
+        infoNodes.push(
+          <dl key={key} className="mt-8 grid grid-cols-[120px_1fr] gap-y-2 text-sm">
+            {b.showSku !== false && (
+              <>
+                <dt className="text-muted-foreground">SKU</dt>
+                <dd className="font-mono text-xs">{product.sku}</dd>
+              </>
+            )}
+            {b.showCategory !== false && product.category && (
+              <>
+                <dt className="text-muted-foreground">Category</dt>
+                <dd>{product.category}</dd>
+              </>
+            )}
+          </dl>,
+        );
+        break;
+      case "relatedProducts": {
+        if (content?.hideRelated) break;
+        const related = await getRelatedProducts({
+          productId: product.productId,
+          picks: (content?.related ?? []).map((r) => (typeof r === "object" ? r.wmsProductId : null)).filter((x): x is string => Boolean(x)),
+          ownCollectionSlugs: await collectionSlugsFromRefs(content?.collections),
+          source: b.source ?? "auto",
+          fixedCollectionSlug: (await collectionSlugsFromRefs(b.collection))[0] ?? null,
+          fromCollectionSlug: fromCollection?.slug ?? null,
+          limit: b.limit ?? 4,
+        });
+        if (!related.length) break;
+        nodes.push(
+          <section key={key} className="mt-16">
+            <h2 className="mb-6 text-2xl font-semibold tracking-tight">{b.heading || "You may also like"}</h2>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              {related.map((p) => (
+                <ProductCard key={p.productId} product={p} pricesHidden={pricesHidden} fromCollection={fromCollection?.slug} />
+              ))}
+            </div>
+          </section>,
+        );
+        break;
+      }
+      case "richText":
+        infoNodes.push(
+          <div key={key}>
+            <Separator className="my-6" />
+            {b.heading && <h2 className="text-sm font-medium mb-2">{b.heading}</h2>}
+            <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: convertLexicalToHTML({ data: b.content }) }} />
+          </div>,
+        );
+        break;
+      case "embed":
+        nodes.push(<div key={key} className="mt-12" dangerouslySetInnerHTML={{ __html: b.html }} />);
+        break;
+    }
+  }
+  if (!nodes.includes(HERO)) nodes.unshift(HERO);
 
+  // ── Sections (Site → Product page template) ──────────────────────────────
+  // The hero is the fixed core (gallery + buy box). Text sections render in its
+  // right column; wide sections (related products, embeds) render below it.
+  const hero = (
+    <>
+      {showBreadcrumbs && (
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            ...(fromCollection
+              ? [
+                  {
+                    label: fromCollection.name,
+                    href: `/collections/${fromCollection.slug}`,
+                  },
+                ]
+              : [{ label: "Collections", href: "/all-collections" }]),
+            { label: product.name },
+          ]}
+        />
+      )}
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12">
         <ProductGallery images={galleryImages} title={product.name} />
 
         <div className="flex flex-col">
-          {product.brand && (
+          {showBrand && product.brand && (
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               {product.brand}
             </p>
@@ -205,31 +291,15 @@ export default async function ProductPage({
           {/* Running total across the whole cart, not just this product — a
               buyer working through several products needs one number. */}
           {bulkVariants && <CartSummaryBar />}
-
-          {description && (
-            <>
-              <Separator className="my-6" />
-              <div className="space-y-2">
-                <h2 className="text-sm font-medium">Description</h2>
-                <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                  {description}
-                </p>
-              </div>
-            </>
-          )}
-
-          <dl className="mt-8 grid grid-cols-[120px_1fr] gap-y-2 text-sm">
-            <dt className="text-muted-foreground">SKU</dt>
-            <dd className="font-mono text-xs">{product.sku}</dd>
-            {product.category && (
-              <>
-                <dt className="text-muted-foreground">Category</dt>
-                <dd>{product.category}</dd>
-              </>
-            )}
-          </dl>
+          {infoNodes}
         </div>
       </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-[70vh] max-w-7xl mx-auto mt-6 sm:mt-12">
+      {nodes.map((n, i) => (n === HERO ? <div key="hero">{hero}</div> : <div key={i}>{n}</div>))}
     </div>
   );
 }
