@@ -1,15 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-// Maps a collection slug → its hero image. Slugs not listed here fall back
-// to a placeholder, so a new collection in the WMS renders without a deploy.
-const COLLECTION_IMAGES: Record<string, string> = {
-  "skwezed-freebase": "/images/skwezed_product_main.webp",
-  "skwezed-30ml": "/images/skwezed_30ml_product_main.webp",
-  "skwezed-ijoy": "/images/ijoy_product_main.webp",
-};
-
-const FALLBACK_IMAGE = "/images/skwezed_product_main.webp";
+import { DEFAULT_SHOWCASE_IMAGES } from "@/lib/homepage-defaults";
 
 type Collection = {
   id: string;
@@ -20,24 +12,34 @@ type Collection = {
   sortOrder: number;
 };
 
+/**
+ * Site → Homepage → Collection showcase. `imageBySlug` comes from the CMS rows; slugs
+ * without one use the built-in map, then `fallbackSrc`.
+ */
 export function CollectionShowcase({
   collections,
+  heading,
+  hiddenSlugs,
+  imageBySlug,
+  fallbackSrc,
 }: {
   collections: Collection[];
+  heading: string;
+  hiddenSlugs: string[];
+  imageBySlug: Record<string, string>;
+  fallbackSrc: string;
 }) {
   if (!collections?.length) return null;
-
-  const EXCLUDED_SLUGS = new Set(["merch", "skwezed-merch"]);
+  const excluded = new Set(hiddenSlugs);
   const sorted = [...collections]
-    .filter((c) => !EXCLUDED_SLUGS.has(c.slug))
+    .filter((c) => !excluded.has(c.slug))
     .sort((a, b) => a.sortOrder - b.sortOrder);
-
-  console.log("SHOWCASE: ", sorted);
+  if (!sorted.length) return null;
 
   return (
     <section className="mb-16">
       <h2 className="mb-10 text-center text-3xl font-bold uppercase tracking-tight sm:text-4xl">
-        The VPR Collection
+        {heading}
       </h2>
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {sorted.map((c) => (
@@ -48,7 +50,7 @@ export function CollectionShowcase({
           >
             <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden">
               <Image
-                src={COLLECTION_IMAGES[c.slug] ?? FALLBACK_IMAGE}
+                src={imageBySlug[c.slug] ?? DEFAULT_SHOWCASE_IMAGES[c.slug] ?? fallbackSrc}
                 alt={c.name}
                 fill
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"

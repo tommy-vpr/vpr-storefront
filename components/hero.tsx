@@ -14,37 +14,12 @@ import "swiper/css/effect-fade";
 type Slide = {
   src: string;
   alt: string;
-  eyebrow?: string;
-  heading: string;
-  subheading?: string;
-  ctaLabel?: string;
-  ctaHref?: string;
-  /** darken the image so overlaid text stays legible */
-  dark?: boolean;
+  href?: string | null;
 };
 
-const SLIDES: Slide[] = [
-  {
-    src: "/images/VPR-web_banners_2.webp",
-    alt: "SKWEZED wholesale collection",
-    eyebrow: "Now stocking",
-    heading: "SKWEZED — Tastes Just Like It",
-    subheading: "Wholesale pricing. Free shipping on every order.",
-    ctaLabel: "Shop SKWEZED",
-    ctaHref: "/collections",
-  },
-  {
-    src: "/images/VPR-web_banners.webp",
-    alt: "iJoy x SKWEZED collection",
-    eyebrow: "New collab",
-    heading: "iJoy \u00d7 SKWEZED",
-    subheading: "Transparent pricing and a 90-day buy-back policy.",
-    ctaLabel: "Browse the drop",
-    ctaHref: "/collections",
-  },
-];
-
-const Hero = () => {
+/** Site → Homepage → Hero slider. */
+const Hero = ({ slides }: { slides: Slide[] }) => {
+  if (!slides.length) return null;
   return (
     /* Full-bleed: no rounding and no side margin, so the slider meets the
        viewport edges. The rounded-xl that used to be here only made sense
@@ -60,8 +35,11 @@ const Hero = () => {
         navigation
         className="h-[60vh] min-h-[280px] w-full overflow-hidden"
       >
-        {SLIDES.map((slide, i) => (
-          <SwiperSlide key={slide.src} className="relative">
+        {slides.map((slide, i) => (
+          <SwiperSlide key={slide.src + i} className="relative">
+            {slide.href ? (
+              <Link href={slide.href} className="absolute inset-0 z-10" aria-label={slide.alt} />
+            ) : null}
             <Image
               src={slide.src}
               alt={slide.alt}

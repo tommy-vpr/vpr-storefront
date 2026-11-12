@@ -14,24 +14,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { logoutAction } from "@/app/actions/logout";
 import { CartIcon } from "./cart-icon";
-import type { Collection } from "@/lib/wms/types";
 import Image from "next/image";
 
-// ─── Edit these to customize the nav ─────────────────────────────────────
-// Brand placeholders: shown alongside the real brand menus. Remove a brand
-// from here once you have collections assigned for it (the auto-grouping
-// will pick them up).
-const BRAND_PLACEHOLDERS: { label: string; href: string }[] = [
-  { label: "IJoy", href: "/collections/skwezed-ijoy" },
-];
-
-// Static utility links. Point to real pages once they exist.
-const UTILITY_LINKS: { label: string; href: string }[] = [
-  { label: "Wholesale App", href: "/wholesale-application" },
-  { label: "Merch", href: "/collections/skwezed-merch" },
-  { label: "Contact", href: "/contact" },
-];
-// ─────────────────────────────────────────────────────────────────────────
+import type { NavItem } from "@/lib/navigation";
 
 interface HeaderProps {
   store: {
@@ -42,76 +27,52 @@ interface HeaderProps {
     name: string | null;
     email: string;
   } | null;
-  collections: Collection[];
   showQuickOrder?: boolean;
+  /** Site → Site settings → Brand. */
+  logo: { src: string; width: number; height: number; alt: string };
+  /** Site → Navigation (or the built-in menu), already resolved to links. */
+  menu: NavItem[];
 }
 
-export function Header({ store, customer, collections, showQuickOrder = false }: HeaderProps) {
+export function Header({ store, customer, showQuickOrder = false, logo, menu }: HeaderProps) {
   const isAuthed = customer !== null;
   const displayName = customer?.name ?? customer?.email ?? null;
-  const NAV_EXCLUDED_SLUGS = new Set(["skwezed-ijoy", "skwezed-merch"]);
-  const brandGroups = groupByBrand(
-    collections.filter((c) => !NAV_EXCLUDED_SLUGS.has(c.slug)),
-  );
-
-  console.log(brandGroups);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div className="container p-2 mx-auto flex h-16 items-center justify-between gap-4 px-4">
         <Link href="/" className="flex items-center gap-2">
-          <Image
-            src={"/images/logo-main.png"}
-            alt="vpr collection"
-            width={150}
-            height={100}
-          />
+          <Image src={logo.src} alt={logo.alt || store.name} width={logo.width} height={logo.height} priority style={{ width: logo.width, height: "auto" }} />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
-          {/* Dynamic brand menus from assigned collections */}
-          {Array.from(brandGroups.entries()).map(([brand, cols]) =>
-            cols.length === 1 ? (
-              <Button asChild variant="ghost" size="sm" key={brand}>
-                <Link href={`/collections/${cols[0].slug}`}>{brand}</Link>
-              </Button>
-            ) : (
-              <DropdownMenu key={brand}>
+          {menu.map((item) =>
+            item.children?.length ? (
+              <DropdownMenu key={item.title + item.href}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-1">
-                    {brand}
+                    {item.title}
                     <ChevronDown className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-48">
-                  {cols.map((c) => (
-                    <DropdownMenuItem asChild key={c.id}>
-                      <Link
-                        href={`/collections/${c.slug}`}
-                        className="cursor-pointer w-full"
-                      >
-                        {stripBrandPrefix(c.name, brand)}
-                      </Link>
+                  {item.children.map((c) => (
+                    <DropdownMenuItem asChild key={c.title + c.href}>
+                      {c.external ? (
+                        <a href={c.href} target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full">{c.title}</a>
+                      ) : (
+                        <Link href={c.href} className="cursor-pointer w-full">{c.title}</Link>
+                      )}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+            ) : (
+              <Button asChild variant="ghost" size="sm" key={item.title + item.href}>
+                {item.external ? <a href={item.href} target="_blank" rel="noopener noreferrer">{item.title}</a> : <Link href={item.href}>{item.title}</Link>}
+              </Button>
             ),
           )}
-
-          {/* Placeholder brands (edit BRAND_PLACEHOLDERS above) */}
-          {BRAND_PLACEHOLDERS.map((item) => (
-            <Button asChild variant="ghost" size="sm" key={item.label}>
-              <Link href={item.href}>{item.label}</Link>
-            </Button>
-          ))}
-
-          {/* Utility links (edit UTILITY_LINKS above) */}
-          {UTILITY_LINKS.map((item) => (
-            <Button asChild variant="ghost" size="sm" key={item.href}>
-              <Link href={item.href}>{item.label}</Link>
-            </Button>
-          ))}
           {showQuickOrder && <Button asChild variant="ghost" size="sm"><Link href="/quick-order">Quick Order</Link></Button>}
         </nav>
 
@@ -173,25 +134,4 @@ export function Header({ store, customer, collections, showQuickOrder = false }:
       </div>
     </header>
   );
-}
-
-// ─── helpers ─────────────────────────────────────────────────────────────
-
-function groupByBrand(collections: Collection[]): Map<string, Collection[]> {
-  const groups = new Map<string, Collection[]>();
-  for (const c of collections) {
-    const brand = c.brand ?? c.name.split(/\s+/)[0] ?? c.name;
-    const existing = groups.get(brand);
-    if (existing) {
-      existing.push(c);
-    } else {
-      groups.set(brand, [c]);
-    }
-  }
-  return groups;
-}
-
-function stripBrandPrefix(name: string, brand: string): string {
-  const prefix = `${brand} `;
-  return name.startsWith(prefix) ? name.slice(prefix.length) : name;
 }
