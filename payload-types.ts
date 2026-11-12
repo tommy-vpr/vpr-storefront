@@ -102,12 +102,14 @@ export interface Config {
     homepage: Homepage;
     'product-page': ProductPage;
     'site-settings': SiteSetting;
+    'age-verification': AgeVerification;
   };
   globalsSelect: {
     navigation: NavigationSelect<false> | NavigationSelect<true>;
     homepage: HomepageSelect<false> | HomepageSelect<true>;
     'product-page': ProductPageSelect<false> | ProductPageSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    'age-verification': AgeVerificationSelect<false> | AgeVerificationSelect<true>;
   };
   locale: null;
   widgets: {
@@ -978,6 +980,35 @@ export interface SiteSetting {
   createdAt?: string | null;
 }
 /**
+ * Manage the storefront’s 21+ confirmation popup. This is a self-declaration, not an ID check.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "age-verification".
+ */
+export interface AgeVerification {
+  id: number;
+  enabled?: boolean | null;
+  /**
+   * Logo shown in the popup. Default: the VPR Collection wordmark.
+   */
+  logo?: (number | null) | Media;
+  heading: string;
+  description: string;
+  confirmLabel: string;
+  denyLabel: string;
+  /**
+   * Where to send visitors who select the under-21 option. Defaults to Google.
+   */
+  deniedRedirectUrl: string;
+  deniedMessage: string;
+  /**
+   * 30 by default. Set 0 to remember only for the current browser tab session.
+   */
+  rememberDays: number;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "navigation_select".
  */
@@ -1171,6 +1202,24 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   contactHours?: T;
   legalText?: T;
   newsletterFormUrl?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "age-verification_select".
+ */
+export interface AgeVerificationSelect<T extends boolean = true> {
+  enabled?: T;
+  logo?: T;
+  heading?: T;
+  description?: T;
+  confirmLabel?: T;
+  denyLabel?: T;
+  deniedRedirectUrl?: T;
+  deniedMessage?: T;
+  rememberDays?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

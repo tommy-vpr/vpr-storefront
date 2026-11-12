@@ -11,6 +11,7 @@ import { SiteSettings } from './payload/globals/site-settings'
 import { Homepage } from './payload/globals/homepage'
 import { Navigation } from './payload/globals/navigation'
 import { ProductPage } from './payload/globals/product-page'
+import { AgeVerification } from './payload/globals/age-verification'
 import { syncCatalogEndpoint } from './payload/endpoints/sync-catalog'
 import { importWmsImagesEndpoint } from './payload/endpoints/import-wms-images'
 import { withStorefrontCollectionInvalidation, withStorefrontGlobalInvalidation } from './payload/hooks/revalidate-storefront'
@@ -98,7 +99,7 @@ export default buildConfig({
     },
     ...commerceCollections,
   ] as CollectionConfig[]).map(withStorefrontCollectionInvalidation),
-  globals: [Navigation, Homepage, ProductPage, SiteSettings].map(withStorefrontGlobalInvalidation),
+  globals: [Navigation, Homepage, ProductPage, SiteSettings, AgeVerification].map(withStorefrontGlobalInvalidation),
   endpoints: [syncCatalogEndpoint, importWmsImagesEndpoint],
   jobs: {
     tasks: [wmsContentImageTask],

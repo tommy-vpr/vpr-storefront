@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { getClient } from "@/lib/wms/session";
 import "../globals.css";
 import { Geist } from "next/font/google";
-import WarningLabel from "@/components/warningLabel";
+import { getAgeVerification } from "@/lib/age-verification";
+import { AgeVerification } from "@/components/age-verification";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -30,15 +31,17 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // 21+ gate wraps every storefront and auth page (Site → Age verification).
+  const ageVerification = await getAgeVerification();
   return (
     <html lang="en" className={geist.className}>
       <body className="min-h-screen bg-background font-sans antialiased">
-        {children}
+        <AgeVerification settings={ageVerification}>{children}</AgeVerification>
       </body>
     </html>
   );
