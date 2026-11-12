@@ -9,6 +9,6 @@
 .actions button:focus-visible, .actions a:focus-visible { outline: 3px solid #e75a0d; outline-offset: 3px; }
 .confirm { background: #e75a0d; color: #fff; border: 1px solid #e75a0d; }
 .confirm:hover { background: #cf4f0a; }
-.deny { background: transparent; color: #d4d4d4; border: 1px solid #3a3a3a; }
-.deny:hover { background: #1c1c1c; color: #fff; }
+.deny { background: #fff; color: #101010; border: 1px solid #fff; }
+.deny:hover { background: #ededed; }
 @media (max-width: 480px) { .backdrop { padding: 16px; } .card { padding: 28px 20px; max-height: calc(100dvh - 32px); } }
