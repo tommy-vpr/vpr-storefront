@@ -1,14 +1,14 @@
-.pending { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: #fafafa; outline: none; }
-.backdrop { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 24px; overflow-y: auto; overscroll-behavior: contain; background: rgb(0 0 0 / 80%); backdrop-filter: blur(8px); }
-.card { width: 100%; max-width: 460px; max-height: calc(100dvh - 48px); overflow-y: auto; overscroll-behavior: contain; padding: 36px 28px; border-radius: 18px; background: #fff; color: #101010; text-align: center; box-shadow: 0 24px 80px #0005; outline: none; }
+.pending { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: #101010; outline: none; }
+.backdrop { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 24px; overflow-y: auto; overscroll-behavior: contain; background: rgb(16 16 16 / 85%); backdrop-filter: blur(8px); }
+.card { width: 100%; max-width: 460px; max-height: calc(100dvh - 48px); overflow-y: auto; overscroll-behavior: contain; padding: 36px 28px; border-radius: 18px; background: #101010; color: #fff; border: 1px solid #2a2a2a; text-align: center; box-shadow: 0 24px 80px #000a; outline: none; }
 .logo { display: block; width: 180px; height: auto; max-height: 48px; object-fit: contain; margin: 0 auto 24px; }
 .heading { margin: 0 0 12px; font-weight: 700; letter-spacing: -0.01em; font-size: clamp(26px, 5vw, 34px); line-height: 1.15; }
-.description { margin: 0; color: #525252; font-size: 15px; line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; }
+.description { margin: 0; color: #b5b5b5; font-size: 15px; line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; }
 .actions { display: grid; gap: 12px; margin-top: 28px; }
 .actions button, .actions a { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; width: 100%; padding: 14px 18px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; overflow-wrap: anywhere; }
-.actions button:focus-visible, .actions a:focus-visible { outline: 3px solid #101010; outline-offset: 3px; }
+.actions button:focus-visible, .actions a:focus-visible { outline: 3px solid #e75a0d; outline-offset: 3px; }
 .confirm { background: #e75a0d; color: #fff; border: 1px solid #e75a0d; }
 .confirm:hover { background: #cf4f0a; }
-.deny { background: #fff; color: #525252; border: 1px solid #ddd; }
-.deny:hover { background: #f5f5f5; }
+.deny { background: transparent; color: #d4d4d4; border: 1px solid #3a3a3a; }
+.deny:hover { background: #1c1c1c; color: #fff; }
 @media (max-width: 480px) { .backdrop { padding: 16px; } .card { padding: 28px 20px; max-height: calc(100dvh - 32px); } }
