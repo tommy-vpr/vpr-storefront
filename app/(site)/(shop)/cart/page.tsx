@@ -142,7 +142,7 @@ export default function CartPage() {
         </div>
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>Shipping</span>
-          <span>Calculated at fulfillment</span>
+          <span>Free</span>
         </div>
         <Separator />
         <div className="flex items-center justify-between text-lg font-medium">
@@ -162,7 +162,7 @@ export default function CartPage() {
 
       <p className="mt-4 text-xs text-muted-foreground">
         Your card is authorized at checkout and charged when your order ships.
-        Shipping is calculated at fulfillment.
+        Shipping is free on every order, including international orders.
       </p>
 
       <p className="mt-2 text-xs text-muted-foreground">

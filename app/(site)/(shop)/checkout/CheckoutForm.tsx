@@ -594,7 +594,7 @@ export function CheckoutForm({
           </div>
           <div className="flex justify-between text-muted-foreground">
             <span>Shipping</span>
-            <span>Calculated at fulfillment</span>
+            <span>Free</span>
           </div>
           <Separator />
           <div className="flex justify-between text-base font-medium">
