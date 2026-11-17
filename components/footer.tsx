@@ -1,26 +1,6 @@
 import Link from "next/link";
 import { Phone, Clock, Mail, ChevronDown } from "lucide-react";
-
-const QUICK_LINKS = [
-  { label: "Pact Act", href: "/pact-app", external: false },
-  {
-    label: "Wholesale App",
-    href: "/wholesale-application",
-    external: false,
-  },
-  {
-    label: "Skwezed Retail Site",
-    href: "https://www.skwezed.com/",
-    external: true,
-  },
-];
-
-const CUSTOMER_SERVICE = [
-  { label: "Partnership Support", href: "/partnership-support" },
-  { label: "Shipping & Return", href: "/shipping-returns" },
-  { label: "Terms of Use", href: "/terms" },
-  { label: "Contact Us", href: "/contact" },
-];
+import type { SiteSettings } from "@/lib/site-defaults";
 
 function LinkItem({
   href,
@@ -73,14 +53,15 @@ function FooterColumn({
   );
 }
 
-export function Footer() {
+export function Footer({ settings }: { settings: SiteSettings }) {
+  const { footerQuickLinks, footerServiceLinks, contact, legalText, newsletterFormUrl, siteName } = settings;
   return (
     <footer className="bg-gray-100">
       <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           <FooterColumn title="Quick Links">
-            {QUICK_LINKS.map((l) => (
-              <li key={l.label}>
+            {footerQuickLinks.map((l) => (
+              <li key={l.label + l.href}>
                 <LinkItem href={l.href} external={l.external}>
                   {l.label}
                 </LinkItem>
@@ -89,9 +70,9 @@ export function Footer() {
           </FooterColumn>
 
           <FooterColumn title="Customer Service">
-            {CUSTOMER_SERVICE.map((l) => (
-              <li key={l.label}>
-                <LinkItem href={l.href}>{l.label}</LinkItem>
+            {footerServiceLinks.map((l) => (
+              <li key={l.label + l.href}>
+                <LinkItem href={l.href} external={l.external}>{l.label}</LinkItem>
               </li>
             ))}
           </FooterColumn>
@@ -99,45 +80,48 @@ export function Footer() {
           <FooterColumn title="Contact">
             <li>
               <a
-                href="tel:+16266980098"
+                href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
                 className="flex items-center gap-2 text-sm transition hover:text-gray-700"
               >
                 <Phone className="h-4 w-4 flex-shrink-0" />
-                <span>(626) 698-0098</span>
+                <span>{contact.phone}</span>
               </a>
             </li>
             <li>
               <div className="flex items-start gap-2 text-sm ">
                 <Clock className="mt-0.5 h-4 w-4 flex-shrink-0" />
                 <span>
-                  Monday - Friday
-                  <br />
-                  10:00a-5:00p PST
+                  {contact.hours.map((line, i) => (
+                    <span key={i}>
+                      {i > 0 ? <br /> : null}
+                      {line}
+                    </span>
+                  ))}
                 </span>
               </div>
             </li>
             <li>
               <a
-                href="mailto:info@vprcollection.com"
+                href={`mailto:${contact.email}`}
                 className="flex items-center gap-2 text-sm transition hover:text-gray-700"
               >
                 <Mail className="h-4 w-4 flex-shrink-0" />
-                <span>Info@vprcollection.com</span>
+                <span>{contact.email}</span>
               </a>
             </li>
           </FooterColumn>
 
           {/* Newsletter / signup form */}
-          <div>
-            <iframe
-              title="Newsletter signup"
-              src="https://form.jotform.com/240252043265446"
-              className="h-64 w-full"
-            />
-          </div>
+          {newsletterFormUrl ? (
+            <div>
+              <iframe title="Newsletter signup" src={newsletterFormUrl} className="h-64 w-full" />
+            </div>
+          ) : null}
         </div>
 
-        <div className="text-[13px] leading-relaxed text-gray-500">
+        <div className="text-[13px] leading-relaxed text-gray-500 whitespace-pre-line">
+          {legalText ?? (
+            <>
           Not for Sale for Minors — Products sold on this site may contain
           nicotine which is a highly addictive substance. California Proposition
           65 - WARNING: This product can expose you to chemicals including
@@ -165,10 +149,12 @@ export function Footer() {
           protection, please keep out of reach of children and pets. Read our
           terms and conditions page before purchasing our products. Use All
           Products On This Site At Your Own Risk!
+            </>
+          )}
         </div>
 
         <div className="mt-4 border-t border-gray-200 py-4 text-center text-sm text-gray-400">
-          VPR Collection&copy;{new Date().getFullYear()}
+          {siteName}&copy;{new Date().getFullYear()}
         </div>
       </div>
     </footer>

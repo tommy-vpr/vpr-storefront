@@ -1,0 +1,46 @@
+/* VPR admin tweaks. Loaded after @payloadcms/next/css from app/(payload)/layout.tsx. */
+
+/* Product renders are tall bottles. Payload's thumbnail box only sets a max-height, so an
+   <img height:100%> falls back to its natural height and gets clipped. Give the box a
+   real square size and letterbox the image inside it instead of centre-cropping. */
+.thumbnail:not(.thumbnail--size-none) {
+  aspect-ratio: 1 / 1;
+  height: auto;
+  min-height: 0;
+  background: #fff;
+}
+.thumbnail:not(.thumbnail--size-none) img,
+.thumbnail:not(.thumbnail--size-none) svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain !important;
+  object-position: center;
+}
+/* The expand-size variant (upload field / media card) positions the img absolutely inside a padded box. */
+.thumbnail--size-expand img,
+.thumbnail--size-expand svg {
+  position: absolute;
+  inset: 0;
+}
+/* Table cells: keep rows compact. */
+.table .thumbnail:not(.thumbnail--size-none) {
+  width: 60px;
+  max-height: none;
+}
+
+/* Shop sync controls (components/cms/*) */
+.cms-sync-list { padding-top: 1rem; padding-bottom: 0.5rem; }
+.cms-sync-control { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.cms-sync-control--list { max-width: 48rem; }
+.cms-image-import-actions { display: flex; gap: 0.5rem; align-items: center; }
+.cms-sync-status { margin: 0; font-size: 0.8125rem; color: var(--theme-elevation-600); }
+.cms-sync-status[hidden] { display: none; }
+.cms-sync-spinner { animation: cms-spin 1s linear infinite; }
+@keyframes cms-spin { to { transform: rotate(360deg); } }
+.cms-image-preview img { background: #fff; }
+
+/* Keep generated coupon codes on one line, including their hyphens. */
+#field-codes .table .cell-code,
+#field-codes .table .cell-code a {
+  white-space: nowrap;
+}

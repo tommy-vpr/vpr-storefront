@@ -10,6 +10,8 @@
  * API key server-side.
  */
 
+import { getLiveCatalogHiddenProductIds as getHiddenProductIds } from '@/lib/storefront-visibility';
+import { withProductListingImages } from '@/lib/product-content';
 import type {
   AftercareAccess,
   OrderAftercare,
@@ -212,7 +214,21 @@ export function wmsClient(token?: string | null) {
         total: res.total,
       };
 
-      return { products: res.products, pageInfo };
+      // CMS visibility (All products → "Show on storefront") on top of the live, store-scoped
+      // WMS list. Filter before paginating so hidden items cannot leave gaps or skew totals.
+      const hidden = await getHiddenProductIds();
+      if (!hidden.size) return { products: await withProductListingImages(res.products), pageInfo };
+      const all: ProductListItem[] = [];
+      let offset = 0;
+      while (true) {
+        qs.delete('cursor'); qs.set('skip', String(offset)); qs.set('take', '100');
+        const page = await request<{ products: ProductListItem[]; total: number }>(`/storefront/collections/${slug}?${qs}`, { ...base, cache: 'no-store' });
+        all.push(...page.products.filter((product) => !hidden.has(product.productId)));
+        offset += page.products.length;
+        if (!page.products.length || offset >= page.total) break;
+      }
+      const products = all.slice(skip, skip + take);
+      return { products: await withProductListingImages(products), pageInfo: { total: all.length, hasNextPage: skip + products.length < all.length, endCursor: products.length ? String(skip + products.length) : null } };
     },
 
     getOrderAftercare(access: AftercareAccess): Promise<OrderAftercare> {
@@ -230,13 +246,16 @@ export function wmsClient(token?: string | null) {
     saveReturnTracking(access: AftercareAccess, input: {requestId:string;trackingNumber:string;carrier:'ups'|'usps'|'fedex'}): Promise<{saved:boolean}> {
       return request('/storefront/orders/aftercare/return-tracking', {...base, method:'POST', body:{...access,...input}, cache:'no-store'});
     },
-    getProduct(variantId: string): Promise<{ product: ProductDetail }> {
-      return request(`/storefront/products/${variantId}`, {
+    async getProduct(variantId: string): Promise<{ product: ProductDetail }> {
+      const result = await request<{ product: ProductDetail }>(`/storefront/products/${variantId}`, {
         ...base,
         // NOT CACHED — see getCollectionProducts. Per-customer prices can't
         // sit behind a response cache keyed only on the URL.
         cache: "no-store",
       });
+      // Hidden in the CMS → behaves exactly like a product WMS never assigned.
+      if ((await getHiddenProductIds()).has(result.product.productId)) throw new WmsError(404, null, 'Product unavailable');
+      return result;
     },
 
     /**
@@ -245,7 +264,7 @@ export function wmsClient(token?: string | null) {
      * Not cached: prices are per-customer, and this is the one screen where a
      * buyer reads dozens of them at once.
      */
-    quickOrder(params?: {
+    async quickOrder(params?: {
       q?: string;
       collectionId?: string;
       skip?: number;
@@ -257,10 +276,19 @@ export function wmsClient(token?: string | null) {
       qs.set("skip", String(params?.skip ?? 0));
       qs.set("take", String(params?.take ?? 50));
 
-      return request(`/storefront/quick-order?${qs}`, {
-        ...base,
-        cache: "no-store",
-      });
+      const hidden = await getHiddenProductIds();
+      if (!hidden.size) return request(`/storefront/quick-order?${qs}`, { ...base, cache: 'no-store' });
+      const visible: QuickOrderVariant[] = [];
+      let offset = 0;
+      while (true) {
+        qs.set('skip', String(offset)); qs.set('take', '100');
+        const page = await request<{ variants: QuickOrderVariant[]; total: number }>(`/storefront/quick-order?${qs}`, { ...base, cache: 'no-store' });
+        visible.push(...page.variants.filter((variant) => !hidden.has(variant.productId)));
+        offset += page.variants.length;
+        if (!page.variants.length || offset >= page.total) break;
+      }
+      const skip = params?.skip ?? 0;
+      return { variants: visible.slice(skip, skip + (params?.take ?? 50)), total: visible.length };
     },
 
     // ─── Auth / invites ─────────────────────────────────────────────────

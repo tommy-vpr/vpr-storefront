@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Payload local uploads (GCS in every real environment)
+/media/
+# keep the example env
+!.env.example
