@@ -8,13 +8,13 @@
  * turning a card into a nonce.
  *
  * Nothing here trusts the client's numbers. Prices, line totals and the order
- * total are all computed by the WMS from ProductVariant.sellingPrice — the
+ * total are computed by WMS using the invited customer's wholesale pricing; the
  * items array carries only variantId and quantity, so a tampered cart buys
  * nothing at the wrong price.
  */
 
 import { headers } from "next/headers";
-import { getClient } from "@/lib/wms/session";
+import { vprFreeShipping } from "@/lib/wholesale-checkout";
 import { getSessionToken } from "@/lib/wms/session";
 import { wmsClient, WmsError } from "@/lib/wms/client";
 import { sendOrderConfirmationEmail } from "@/lib/email";
@@ -22,6 +22,8 @@ import { verifyTurnstile } from "@/lib/turnstile";
 import type { OpaqueData, ShippingAddress } from "@/lib/wms/types";
 
 export interface CheckoutInput {
+  idempotencyKey: string;
+  expectedTotalCents: number;
   email: string;
   items: Array<{ variantId: string; quantity: number }>;
   shippingAddress: ShippingAddress;
@@ -42,6 +44,8 @@ export type CheckoutResult =
   | { ok: false; code: CheckoutErrorCode; message: string };
 
 export type CheckoutErrorCode =
+  | "auth"
+  | "pending"
   | "declined"
   | "unavailable"
   | "invalid"
@@ -51,6 +55,12 @@ export type CheckoutErrorCode =
 export async function placeOrderAction(
   input: CheckoutInput,
 ): Promise<CheckoutResult> {
+  if (!/^[A-Za-z0-9_-]{8,128}$/.test(input.idempotencyKey ?? '') || !Number.isSafeInteger(input.expectedTotalCents) || input.expectedTotalCents < 0) {
+    return { ok: false, code: 'invalid', message: 'Refresh checkout to confirm your order total.' };
+  }
+  const token = await getSessionToken();
+  if (!token) return { ok: false, code: 'auth', message: 'Sign in with your invited wholesale account before ordering.' };
+  if (!/^[A-Z]{2}$/.test((input.shippingAddress?.country ?? 'US').trim().toUpperCase())) return {ok: false, code: 'invalid', message: 'Use a two-letter shipping country code.'};
   if (!input.items?.length) {
     return { ok: false, code: "invalid", message: "Your cart is empty." };
   }
@@ -69,18 +79,24 @@ export async function placeOrderAction(
     };
   }
 
-  // A signed-in customer's token makes the WMS use THEIR email and attach the
-  // order to their account; a guest sends the email in the body. Same endpoint
-  // either way — storefrontCustomerOptional never rejects.
-  const token = await getSessionToken();
-  const client = token ? wmsClient(token) : getClient();
-
+  const client = wmsClient(token);
+  let paymentSubmitted = false;
   try {
+    const { store } = await client.getStore();
+    if (store.mode !== 'WHOLESALE' || !process.env.WMS_STORE_ID || store.id !== process.env.WMS_STORE_ID || !store.shippingRatesSupported) {
+      return {ok: false, code: 'unavailable', message: 'Wholesale checkout is temporarily unavailable. Please contact your sales rep.'};
+    }
+    const { customer } = await client.getMe();
+    if (!customer.wholesaleAccount) return {ok: false, code: 'auth', message: 'Your account needs wholesale access. Contact your sales rep.'};
+    paymentSubmitted = true;
     const { order } = await client.placeOrder({
+      idempotencyKey: input.idempotencyKey,
+      expectedTotalCents: input.expectedTotalCents,
+      shipping: vprFreeShipping(input.expectedTotalCents),
       items: input.items,
       shippingAddress: input.shippingAddress,
       billingAddress: input.billingAddress,
-      email: input.email,
+      email: customer.email,
       payment: { opaqueData: input.opaqueData },
     });
 
@@ -107,7 +123,7 @@ export async function placeOrderAction(
         await sendOrderConfirmationEmail({
           orderId: order.id,
           orderNumber: order.orderNumber,
-          to: input.email,
+          to: customer.email,
           totalAmount: order.totalAmount,
           statusUrl: `${base}/orders/${order.guestAccessToken}`,
           items: order.items.map((item, index) => {
@@ -135,9 +151,15 @@ export async function placeOrderAction(
   } catch (err) {
     if (err instanceof WmsError) {
       const body = err.body as
-        | { error?: string; message?: string; missingVariantIds?: string[] }
+        | { error?: string; message?: string; missingVariantIds?: string[]; code?: string }
         | null;
 
+      if (body?.code === 'PAYMENT_PENDING' || body?.code === 'IDEMPOTENCY_CONFLICT') {
+        return {ok: false, code: 'pending', message: 'Your payment needs confirmation. Do not submit another payment. Check your order history or contact us with your checkout reference.'};
+      }
+      if (body?.code === 'PAYMENT_SETUP') return {ok: false, code: 'unavailable', message: 'Card payments are temporarily unavailable. Please contact your sales rep.'};
+      if (!paymentSubmitted && [401,403].includes(err.status)) return {ok: false, code: 'auth', message: 'Sign in with your invited wholesale account before ordering.'};
+      if (err.status === 409) return {ok: false, code: 'invalid', message: 'Prices or availability changed. Refresh your cart to review the total before paying.'};
       // 402 covers both a real decline and a spent/expired nonce. The customer
       // can't tell those apart and shouldn't have to — either way the fix is
       // to re-enter the card, and the WMS has already deleted the order, so
@@ -171,15 +193,9 @@ export async function placeOrderAction(
       }
     }
 
-    // Anything else — gateway threw, WMS down, network. The WMS rolls the
-    // order back on a thrown authorization, so a retry is safe. Log server-side
-    // where the detail is useful; the customer gets something actionable.
-    console.error("[checkout] placeOrder failed", err);
-    return {
-      ok: false,
-      code: "unknown",
-      message:
-        "We couldn't complete your order. No payment was taken — please try again.",
-    };
+    console.error('[checkout] placeOrder failed', {attempt: input.idempotencyKey, error: err instanceof Error ? err.name : 'unknown'});
+    return paymentSubmitted
+      ? {ok: false, code: 'pending', message: "We couldn't confirm your payment outcome. Do not submit another payment. Check your order history or contact us with your checkout reference."}
+      : {ok: false, code: 'unavailable', message: 'Checkout is temporarily unavailable. Please try again later.'};
   }
 }

@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getClient, tryGetAuthedClient } from "@/lib/wms/session";
+import { tryGetAuthedClient } from "@/lib/wms/session";
 import { LoginForm } from "./form";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,6 @@ export default async function LoginPage({
     redirect(safeRedirect(redirectTo) ?? "/");
   }
 
-  const { store } = await getClient().getStore();
 
   return (
     <>
@@ -46,24 +45,7 @@ export default async function LoginPage({
           </Link>
         </p>
 
-        {/* Hidden on a wholesale store — there's nothing to link to, and
-            inviting someone to create an account they can't create is worse
-            than saying nothing. */}
-        {store.mode !== "WHOLESALE" && (
-        <p className="mt-2 text-center text-sm text-muted-foreground">
-          New here?{" "}
-          <Link
-            href={
-              safeRedirect(redirectTo)
-                ? `/signup?redirect=${encodeURIComponent(safeRedirect(redirectTo)!)}`
-                : "/signup"
-            }
-            className="font-medium text-foreground underline-offset-4 hover:underline"
-          >
-            Create an account
-          </Link>
-        </p>
-        )}
+        <p className="mt-2 text-center text-sm text-muted-foreground">Wholesale access is invitation-only. Contact your sales rep.</p>
       </CardContent>
     </>
   );

@@ -77,7 +77,6 @@ export async function POST(request: Request) {
         input,
         sessionToken,
         includedPrimaryTypes: ["street_address", "premise", "subpremise"],
-        includedRegionCodes: ["us"],
         languageCode: "en",
         regionCode: "us",
       }),

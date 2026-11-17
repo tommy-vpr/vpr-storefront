@@ -22,6 +22,7 @@ export interface StoreInfo {
    * this value arrives in a response anyone posting directly can ignore.
    */
   mode: "RETAIL" | "WHOLESALE";
+  shippingRatesSupported?: boolean;
 }
 
 export interface Collection {
