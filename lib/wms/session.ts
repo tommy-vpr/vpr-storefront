@@ -9,8 +9,10 @@
 import { cookies } from "next/headers";
 import { wmsClient } from "./client";
 
-const SESSION_COOKIE =
-  process.env.SESSION_COOKIE_NAME || "storefront_session";
+const configuredCookie = process.env.SESSION_COOKIE_NAME;
+// Cookies ignore ports: never share a generic cookie with another storefront.
+const SESSION_COOKIE = !configuredCookie || configuredCookie === "storefront_session"
+  ? "vpr_storefront_session" : configuredCookie;
 const JWT_MAX_AGE_SECONDS = 7 * 24 * 60 * 60; // 7 days — matches WMS
 
 // ──────────────────────────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { CheckoutForm } from "./CheckoutForm";
 import { tryGetAuthedClient } from "@/lib/wms/session";
 import type { ShippingAddress } from "@/lib/wms/types";
@@ -35,15 +36,19 @@ export default async function CheckoutPage() {
   const sandbox = process.env.NEXT_PUBLIC_ACCEPT_SANDBOX !== "false";
   const acceptJsUrl = sandbox ? SANDBOX_ACCEPT_JS : PRODUCTION_ACCEPT_JS;
 
+  if (!(await tryGetAuthedClient())) redirect("/login?redirect=%2Fcheckout");
+
   // Prefill for a signed-in customer. Wrapped because an expired JWT only
   // fails at the WMS, and the right outcome then is an empty form, not an
   // error page between a customer and their order.
+  let accessError: string | null = null;
   let initialEmail = "";
   let initialAddress: Partial<ShippingAddress> | undefined;
   try {
     const client = await tryGetAuthedClient();
     if (client) {
       const { customer } = await client.getMe();
+      if (!customer.wholesaleAccount) accessError = 'Your account needs wholesale access. Contact your sales rep.';
       initialEmail = customer.email;
       initialAddress = {
         name: customer.name ?? "",
@@ -57,9 +62,10 @@ export default async function CheckoutPage() {
       };
     }
   } catch {
-    // Signed out, expired, or the WMS is unhappy — fall through to a blank
-    // form. Checkout still works; they just type it themselves.
+    accessError = "Wholesale checkout is temporarily unavailable. Please sign in again or try later.";
   }
+  if (accessError) return <p>{accessError}</p>;
+  if (!initialEmail) redirect("/login?redirect=%2Fcheckout");
 
   if (!clientKey || !loginId) {
     return (

@@ -88,6 +88,7 @@ async function request<T>(
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
     cache: opts.cache,
     next: opts.next,
+    signal: AbortSignal.timeout(20_000),
   });
 
   if (res.status === 204) {
@@ -426,6 +427,9 @@ export function wmsClient(token?: string | null) {
      * with a NEW nonce.
      */
     placeOrder(body: {
+      idempotencyKey: string;
+      expectedTotalCents: number;
+      shipping: ReturnType<typeof import("../wholesale-checkout").vprFreeShipping>;
       items: Array<{ variantId: string; quantity: number }>;
       shippingAddress: ShippingAddress;
       billingAddress?: ShippingAddress;

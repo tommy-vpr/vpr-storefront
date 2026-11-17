@@ -27,11 +27,10 @@ import {
 } from "@/components/address-autocomplete";
 import { Turnstile, type TurnstileHandle } from "@/components/turnstile";
 import { formatPrice } from "@/lib/format";
+import { beginCheckoutAttempt, finishCheckoutAttempt, readCheckoutAttempt } from "@/lib/checkout-attempt";
 import { placeOrderAction } from "./actions";
 import type { ShippingAddress } from "@/lib/wms/types";
-import Image from "next/image";
 import { useCardValidation, formatCardNumber } from "@/lib/use-card-validation";
-import { cn } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -116,6 +115,14 @@ export function CheckoutForm({
   });
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileHandle | null>(null);
+  const submitInFlight = useRef(false);
+  const [pendingAttempt, setPendingAttempt] = useState<string | null>(null);
+  const [attemptStorageReady, setAttemptStorageReady] = useState(false);
+  useEffect(() => {
+    const sync = () => { try { setPendingAttempt(readCheckoutAttempt(localStorage)); setAttemptStorageReady(true); } catch { setAttemptStorageReady(false); } };
+    sync(); window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
   const [submitting, setSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<{ number: string; url: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -205,6 +212,7 @@ export function CheckoutForm({
     );
 
   const handleSubmit = async () => {
+    if (submitInFlight.current || pendingAttempt || !attemptStorageReady) return;
     setError(null);
 
     if (!email.trim()) return setError("Enter an email for your receipt.");
@@ -230,13 +238,20 @@ export function CheckoutForm({
 
     if (cardCheck.firstProblem) return setError(cardCheck.firstProblem);
 
+    submitInFlight.current = true;
     setSubmitting(true);
+    let attempt: string | null = null;
     try {
       // Tokenize FIRST. If the card is malformed we never reach the server, so
       // no order is created and nothing needs rolling back.
       const opaqueData = await tokenize();
 
+      const reserve = () => beginCheckoutAttempt(localStorage, crypto.randomUUID());
+      attempt = navigator.locks ? await navigator.locks.request('vpr-checkout-submit', reserve) : reserve();
+      setPendingAttempt(attempt);
       const result = await placeOrderAction({
+        idempotencyKey: attempt,
+        expectedTotalCents: Math.round(subtotal * 100),
         email: email.trim(),
         items: items.map((i) => ({
           variantId: i.variantId,
@@ -257,6 +272,7 @@ export function CheckoutForm({
       });
 
       if (!result.ok) {
+        if (result.code !== "pending") { finishCheckoutAttempt(localStorage, attempt); setPendingAttempt(null); }
         setError(result.message);
         // Turnstile tokens are single-use, so a retry needs a fresh one —
         // resending the rejected token would fail identically.
@@ -269,6 +285,8 @@ export function CheckoutForm({
         return;
       }
 
+      finishCheckoutAttempt(localStorage, attempt);
+      setPendingAttempt(null);
       const confirmationUrl = result.token
         ? `/orders/${result.token}`
         : `/orders/lookup?placed=${encodeURIComponent(result.orderNumber)}`;
@@ -277,9 +295,9 @@ export function CheckoutForm({
       clear();
       router.replace(confirmationUrl);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-      setSubmitting(false);
-    }
+      setError(attempt ? "We couldn't confirm your payment outcome. Do not submit another payment. Contact us with your checkout reference." : err instanceof Error ? err.message : 'Checkout is unavailable. Please try again later.');
+      turnstileRef.current?.reset(); setCard(c => ({...c, number: '', cvv: ''}));
+    } finally { submitInFlight.current = false; setSubmitting(false); }
   };
 
   if (completedOrder) {
@@ -357,17 +375,16 @@ export function CheckoutForm({
           />
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor={`${prefix}-state`}>State</Label>
+          <Label htmlFor={`${prefix}-state`}>State / province / region</Label>
           <Input
             id={`${prefix}-state`}
             value={value.state}
             onChange={(e) => set("state", e.target.value)}
             autoComplete="address-level1"
-            maxLength={2}
           />
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor={`${prefix}-zip`}>ZIP</Label>
+          <Label htmlFor={`${prefix}-zip`}>ZIP / postal code</Label>
           <Input
             id={`${prefix}-zip`}
             value={value.zip}
@@ -375,6 +392,10 @@ export function CheckoutForm({
             autoComplete="postal-code"
           />
         </div>
+      </div>
+      <div className="grid gap-1.5">
+        <Label htmlFor={`${prefix}-country`}>Country code (US, CA, GB...)</Label>
+        <Input id={`${prefix}-country`} value={value.country ?? 'US'} onChange={e => set('country', e.target.value.toUpperCase())} autoComplete="country" maxLength={2} />
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor={`${prefix}-phone`}>Phone (optional)</Label>
@@ -573,7 +594,7 @@ export function CheckoutForm({
           </div>
           <div className="flex justify-between text-muted-foreground">
             <span>Shipping</span>
-            <span>Calculated at fulfillment</span>
+            <span>Free</span>
           </div>
           <Separator />
           <div className="flex justify-between text-base font-medium">
@@ -595,6 +616,8 @@ export function CheckoutForm({
           />
         )}
 
+        {pendingAttempt && <div role="alert" className="mt-4 border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-950"><p>Your payment needs confirmation. Do not pay again. Contact us with this reference:</p><code className="break-all">{pendingAttempt}</code><Link href="/account/orders" className="mt-2 block underline">View order history</Link></div>}
+        {!attemptStorageReady && <p role="alert" className="mt-4 text-sm text-destructive">Enable browser storage and refresh before checking out.</p>}
         {error && (
           <p className="mt-4 border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
             {error}
@@ -604,7 +627,7 @@ export function CheckoutForm({
         <Button
           className="mt-5 w-full hover:bg-primary/90 transition"
           size="lg"
-          disabled={!acceptReady || submitting}
+          disabled={!signedIn || !attemptStorageReady || Boolean(pendingAttempt) || !acceptReady || submitting}
           onClick={handleSubmit}
         >
           {submitting
