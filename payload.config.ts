@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
 import { buildConfig, type Access, type CollectionConfig } from 'payload'
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import {managedPg} from './lib/database-pool'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { gcsStorage } from '@payloadcms/storage-gcs'
 import sharp from 'sharp'
@@ -107,7 +108,13 @@ export default buildConfig({
     jobsCollectionOverrides: ({ defaultJobsCollection }) => ({ ...defaultJobsCollection, admin: { ...defaultJobsCollection.admin, hidden: true } }),
   },
   db: postgresAdapter({
-    pool: { connectionString: process.env.PAYLOAD_DATABASE_URL || '', max: 5 },
+    // Bridge the adapter's older pg types to the same runtime driver API.
+    pg: managedPg as unknown as NonNullable<Parameters<typeof postgresAdapter>[0]['pg']>,
+    pool: {
+      connectionString: process.env.PAYLOAD_DATABASE_URL || '',
+      application_name: 'vpr-payload',
+      max: 5, min: 0, idleTimeoutMillis: 10000, connectionTimeoutMillis: 10000,
+    },
     schemaName: 'payload',
     push: process.env.NODE_ENV !== 'production' && process.env.PAYLOAD_DB_PUSH === 'true',
     migrationDir: path.join(dirname, 'payload/migrations'),

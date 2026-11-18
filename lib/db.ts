@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
+import {ManagedPool} from "./database-pool";
 
 /**
  * Prisma client singleton for the storefront-local database.
@@ -12,7 +12,7 @@ import pg from "pg";
  *
  * The globalThis guard exists because Next.js dev mode hot-reloads modules on
  * every edit; without it each reload opens a new pool until Postgres refuses
- * connections. In production the module evaluates once and the guard is inert.
+ * connections. Production also reuses the client within each warm server instance.
  */
 
 const globalForPrisma = globalThis as unknown as {
@@ -25,8 +25,13 @@ function createPrismaClient(): PrismaClient {
     throw new Error("DATABASE_URL is not set");
   }
 
-  const pool = new pg.Pool({
+  const pool = new ManagedPool({
     connectionString,
+    application_name: 'vpr-prisma',
+    max: 2,
+    min: 0,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 10000,
     // Local Docker Postgres has no TLS; Supabase does. Enabling SSL only when
     // the URL isn't localhost keeps one config working for both.
     ssl: connectionString.includes("localhost")
@@ -39,6 +44,4 @@ function createPrismaClient(): PrismaClient {
 
 export const prisma = globalForPrisma.storefrontPrisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.storefrontPrisma = prisma;
-}
+globalForPrisma.storefrontPrisma = prisma;
